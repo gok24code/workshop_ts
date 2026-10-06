@@ -29,16 +29,15 @@ Teknoloji: Next.js (App Router, Server Actions) · Tailwind CSS · Cloudflare R2
 ### 2. Ortam değişkenleri
 
 ```bash
-cp .env.example .env.local
 openssl rand -base64 24   # ADMIN_PASSWORD
-openssl rand -base64 48   # SESSION_SECRET
+openssl rand -base64 48   # SESSION_SECRET (isteğe bağlı)
 ```
 
 | Değişken | Açıklama |
 | --- | --- |
 | `ADMIN_PASSWORD` | `/admin` şifresi (en az 12 karakter) |
 | `ADMIN_SESSION_MINUTES` | Admin oturum süresi, dakika (varsayılan 120) |
-| `SESSION_SECRET` | Oturum çerezlerini imzalayan sunucu anahtarı (en az 32 karakter). Değiştirilirse herkesin oturumu kapanır. |
+| `SESSION_SECRET` | *İsteğe bağlı.* Boş bırakılırsa ilk çalışmada rastgele bir anahtar üretilip private bucket'ta (`wts/signing-secret.json`) saklanır. Doldurulursa en az 32 karakter olmalı. Anahtar değişirse herkesin oturumu kapanır. |
 | `R2_ACCOUNT_ID` | Cloudflare hesap ID'si |
 | `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` | R2 API token bilgileri |
 | `R2_BUCKET_NAME` | Bucket adı |

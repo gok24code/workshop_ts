@@ -3,7 +3,7 @@ import { createHash, timingSafeEqual } from "crypto";
 import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { mutateAdminSessions, newId, now, readAdminSessions, readDb } from "./db";
+import { getOrCreateSigningSecret, mutateAdminSessions, newId, now, readAdminSessions, readDb } from "./db";
 import type { Workshop } from "./types";
 
 /* ------------------------------------------------------------------ */
@@ -22,18 +22,31 @@ const INSTRUCTOR_COOKIE_MAX_AGE = 400 * 24 * 60 * 60;
 
 const secure = () => process.env.NODE_ENV === "production";
 
-function secretKey(): Uint8Array {
-  const secret = process.env.SESSION_SECRET;
-  if (!secret || secret.length < 32) {
-    throw new Error("SESSION_SECRET en az 32 karakter olmalı (.env dosyasını kontrol edin).");
+let cachedKey: Promise<Uint8Array> | null = null;
+
+/**
+ * Oturum çerezlerini imzalayan anahtar. `SESSION_SECRET` tanımlıysa o kullanılır;
+ * boşsa rastgele üretilip private R2 bucket'ında saklanan anahtar kullanılır.
+ */
+function secretKey(): Promise<Uint8Array> {
+  const fromEnv = process.env.SESSION_SECRET;
+  if (fromEnv) {
+    if (fromEnv.length < 32) throw new Error("SESSION_SECRET en az 32 karakter olmalı ya da tamamen boş bırakılmalı.");
+    return Promise.resolve(new TextEncoder().encode(fromEnv));
   }
-  return new TextEncoder().encode(secret);
+  cachedKey ??= getOrCreateSigningSecret()
+    .then((s) => new TextEncoder().encode(s))
+    .catch((err) => {
+      cachedKey = null;
+      throw err;
+    });
+  return cachedKey;
 }
 
 async function verify(token: string | undefined, audience: string): Promise<JWTPayload | null> {
   if (!token) return null;
   try {
-    const { payload } = await jwtVerify(token, secretKey(), { algorithms: ["HS256"], issuer: ISSUER, audience });
+    const { payload } = await jwtVerify(token, await secretKey(), { algorithms: ["HS256"], issuer: ISSUER, audience });
     return payload;
   } catch {
     return null;
@@ -81,7 +94,7 @@ export async function createAdminSession(ip: string): Promise<void> {
     .setAudience(ADMIN_AUD)
     .setIssuedAt()
     .setExpirationTime(`${ttl}s`)
-    .sign(secretKey());
+    .sign(await secretKey());
 
   (await cookies()).set(ADMIN_COOKIE, token, {
     httpOnly: true,
@@ -132,7 +145,7 @@ export async function createInstructorSession(workshop: Workshop): Promise<void>
     .setIssuer(ISSUER)
     .setAudience(INSTRUCTOR_AUD)
     .setIssuedAt()
-    .sign(secretKey());
+    .sign(await secretKey());
 
   (await cookies()).set(INSTRUCTOR_COOKIE, token, {
     httpOnly: true,

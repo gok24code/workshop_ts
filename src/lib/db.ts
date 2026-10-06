@@ -74,3 +74,29 @@ export const mutateLoginFailures = <R>(fn: (f: LoginFailure[]) => R) =>
 
 export const newId = () => crypto.randomUUID();
 export const now = () => new Date().toISOString();
+
+/* ---- Oturum imzalama anahtarı ---- */
+
+const SECRET_KEY = "wts/signing-secret.json";
+
+/**
+ * `SESSION_SECRET` tanımlı değilse kullanılan imzalama anahtarı. İlk çağrıda
+ * rastgele üretilip private depoya yalnızca bir kez yazılır (eşzamanlı ilk
+ * isteklerde hepsi aynı anahtarı kullanır); sonraki çağrılarda okunur.
+ */
+export async function getOrCreateSigningSecret(): Promise<string> {
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const { data, etag } = await load<{ secret?: string }>(SECRET_KEY, () => ({}));
+    if (data.secret && data.secret.length >= 32) return data.secret;
+    const secret = Buffer.from(crypto.getRandomValues(new Uint8Array(48))).toString("base64");
+    try {
+      // etag === null → nesne henüz yok; R2'ye "yalnızca yoksa yaz" koşuluyla gider.
+      await save(SECRET_KEY, { secret, createdAt: now() }, etag);
+      return secret;
+    } catch (err) {
+      if (err instanceof PreconditionFailedError) continue; // başka bir istek önce yazdı → onu oku
+      throw err;
+    }
+  }
+  throw new Error("Oturum imzalama anahtarı oluşturulamadı.");
+}
