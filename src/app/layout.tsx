@@ -6,7 +6,7 @@ const inter = Inter({ variable: "--font-inter", subsets: ["latin", "latin-ext"] 
 
 export const metadata: Metadata = {
   title: { default: "WTS · Workshop Takip Sistemi", template: "%s · WTS" },
-  description: "İSÜBÜ Siber Güvenlik ve Yapay Zeka Kulübü workshop yoklama ve devamsızlık takip sistemi.",
+  description: "ISUBÜ Siber Güvenlik ve Yapay Zeka Topluluğu workshop yoklama ve devamsızlık takip sistemi.",
   robots: { index: false, follow: false },
 };
 

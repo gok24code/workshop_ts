@@ -1,5 +1,5 @@
 import { adminLogout as logout } from "@/app/actions/auth";
-import { Logo } from "./Logo";
+import { Logo, UniversityLogo } from "./Logo";
 import { NavLinks } from "./NavLinks";
 
 export function PanelShell({
@@ -23,6 +23,9 @@ export function PanelShell({
         <div className="px-5 pb-3 text-[11px] font-semibold tracking-[0.2em] text-gold-400 uppercase">{title}</div>
         <NavLinks links={links} />
         <div className="mt-auto hidden border-t border-white/10 p-5 lg:block">
+          <div className="mb-4">
+            <UniversityLogo className="h-12" />
+          </div>
           <div className="text-xs text-white/50">Oturum</div>
           <div className="truncate text-sm font-semibold">{user}</div>
           <form action={logout} className="mt-3">

@@ -1,6 +1,6 @@
 # WTS · Workshop Takip Sistemi
 
-İSÜBÜ Siber Güvenlik ve Yapay Zeka Kulübü workshopları için haftalık yoklama ve devamsızlık takip sistemi.
+ISUBÜ Siber Güvenlik ve Yapay Zeka Topluluğu workshopları için haftalık yoklama ve devamsızlık takip sistemi.
 
 | Adres | Kim kullanır | Ne yapar |
 | --- | --- | --- |

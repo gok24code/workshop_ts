@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { instructorLogin } from "@/app/actions/auth";
 import { ActionForm, SubmitButton } from "@/components/forms";
-import { LogoMark } from "@/components/Logo";
+import { LogoMark, OrgFooter } from "@/components/Logo";
 import { getInstructorWorkshop } from "@/lib/auth";
 
 export const metadata = { title: "Eğitmen Girişi" };
@@ -13,7 +13,7 @@ export default async function InstructorLoginPage() {
       <div className="pointer-events-none absolute -top-40 -right-40 h-[420px] w-[420px] rounded-full bg-gold-500/10 blur-3xl" />
       <main className="relative mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-4 py-10">
         <div className="mb-8 flex flex-col items-center text-center">
-          <LogoMark className="h-16 w-16" />
+          <LogoMark className="h-28 w-28" priority />
           <h1 className="text-gold-gradient mt-4 text-5xl font-black tracking-[0.25em]">WTS</h1>
           <p className="mt-2 text-sm font-medium text-white/70">Workshop Takip Sistemi</p>
         </div>
@@ -38,7 +38,7 @@ export default async function InstructorLoginPage() {
         </div>
       </main>
       <div className="bg-gold-gradient h-1 w-full" />
-      <footer className="py-4 text-center text-xs text-white/40">İSÜBÜ Siber Güvenlik ve Yapay Zeka Kulübü</footer>
+      <OrgFooter />
     </div>
   );
 }

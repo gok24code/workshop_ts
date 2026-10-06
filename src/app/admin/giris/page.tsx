@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { adminLogin } from "@/app/actions/auth";
 import { ActionForm, SubmitButton } from "@/components/forms";
-import { LogoMark } from "@/components/Logo";
+import { LogoMark, OrgFooter } from "@/components/Logo";
 import { adminSessionTtlMinutes, getAdminSessionId } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Yönetim" };
@@ -13,7 +13,7 @@ export default async function AdminLoginPage() {
     <div className="bg-navy-gradient flex min-h-dvh items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center gap-3">
-          <LogoMark className="h-14 w-14" />
+          <LogoMark className="h-24 w-24" priority />
           <span className="text-gold-gradient text-3xl font-black tracking-[0.25em]">WTS</span>
         </div>
         <div className="overflow-hidden rounded-2xl bg-white shadow-2xl">
@@ -32,6 +32,7 @@ export default async function AdminLoginPage() {
             </ActionForm>
           </div>
         </div>
+        <OrgFooter />
       </div>
     </div>
   );
