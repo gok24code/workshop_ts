@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+@theme {
+  --color-navy-950: #050d1c;
+  --color-navy-900: #0a1a33;
+  --color-navy-800: #0f2547;
+  --color-navy-700: #16335f;
+  --color-navy-600: #1f4479;
+  --color-navy-100: #e6ecf5;
+  --color-navy-50: #f4f7fb;
+  --color-gold-300: #f5dc8a;
+  --color-gold-400: #e9c45a;
+  --color-gold-500: #d4af37;
+  --color-gold-600: #b8912a;
+  --color-gold-700: #8f6f1c;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    background: var(--color-navy-50);
+    color: var(--color-navy-900);
+  }
+}
+
+@utility bg-gold-gradient {
+  background-image: linear-gradient(135deg, #b8912a 0%, #e9c45a 45%, #f5dc8a 60%, #d4af37 100%);
+}
+
+@utility bg-navy-gradient {
+  background-image: linear-gradient(160deg, #050d1c 0%, #0f2547 55%, #16335f 100%);
+}
+
+@utility text-gold-gradient {
+  background-image: linear-gradient(135deg, #d4af37 0%, #f5dc8a 50%, #b8912a 100%);
+  background-clip: text;
+  color: transparent;
+}
+
+@utility btn {
+  @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+@utility btn-gold {
+  @apply btn bg-gold-gradient text-navy-950 shadow-sm hover:brightness-105 hover:shadow-md;
+}
+
+@utility btn-navy {
+  @apply btn bg-navy-800 text-white hover:bg-navy-700;
+}
+
+@utility btn-ghost {
+  @apply btn border border-navy-100 bg-white text-navy-800 hover:border-gold-500 hover:text-navy-950;
+}
+
+@utility btn-danger {
+  @apply btn border border-red-200 bg-white text-red-700 hover:bg-red-50;
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-navy-100 bg-white shadow-sm;
+  }
+  .input {
+    @apply w-full rounded-lg border border-navy-100 bg-white px-3 py-2 text-sm text-navy-900 outline-none transition placeholder:text-navy-900/40 focus:border-gold-500 focus:ring-2 focus:ring-gold-400/40;
+  }
+  .label {
+    @apply mb-1 block text-xs font-semibold tracking-wide text-navy-700 uppercase;
+  }
+  .table {
+    @apply w-full text-left text-sm;
+  }
+  .table th {
+    @apply border-b border-navy-100 bg-navy-50 px-4 py-3 text-xs font-semibold tracking-wide text-navy-700 uppercase;
+  }
+  .table td {
+    @apply border-b border-navy-100/70 px-4 py-3 align-middle;
+  }
+  .table tr:last-child td {
+    @apply border-b-0;
+  }
+}
