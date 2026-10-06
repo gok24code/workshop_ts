@@ -1,10 +1,10 @@
-import type { Database, Session, Student, Workshop } from "./types";
+import type { Database, Participant, Session, Workshop } from "./types";
 
-export interface StudentWorkshopStats {
+export interface ParticipantStats {
   present: number;
   absent: number;
   excused: number;
-  /** Öğrencinin yoklamada işaretlendiği hafta sayısı. */
+  /** Katılımcının yoklamada işaretlendiği hafta sayısı. */
   total: number;
   rate: number; // 0-1 arası katılım oranı (mazeretli hariç)
 }
@@ -15,12 +15,12 @@ export function sessionsOf(db: Database, workshopId: string): Session[] {
     .sort((a, b) => a.week - b.week);
 }
 
-export function studentStatsInWorkshop(sessions: Session[], studentId: string): StudentWorkshopStats {
+export function participantStats(sessions: Session[], participantId: string): ParticipantStats {
   let present = 0;
   let absent = 0;
   let excused = 0;
   for (const s of sessions) {
-    const status = s.attendance[studentId];
+    const status = s.attendance[participantId];
     if (status === "present") present++;
     else if (status === "absent") absent++;
     else if (status === "excused") excused++;
@@ -31,7 +31,7 @@ export function studentStatsInWorkshop(sessions: Session[], studentId: string): 
 
 export interface WorkshopStats {
   sessionCount: number;
-  studentCount: number;
+  participantCount: number;
   totalAbsences: number;
   rate: number;
   overLimit: number;
@@ -42,8 +42,9 @@ export function workshopStats(db: Database, w: Workshop): WorkshopStats {
   let present = 0;
   let absent = 0;
   let overLimit = 0;
-  for (const sid of w.studentIds) {
-    const st = studentStatsInWorkshop(sessions, sid);
+  const participants = participantsOf(db, w.id);
+  for (const p of participants) {
+    const st = participantStats(sessions, p.id);
     present += st.present;
     absent += st.absent;
     if (st.absent > w.absenceLimit) overLimit++;
@@ -51,40 +52,54 @@ export function workshopStats(db: Database, w: Workshop): WorkshopStats {
   const counted = present + absent;
   return {
     sessionCount: sessions.length,
-    studentCount: w.studentIds.length,
+    participantCount: participants.length,
     totalAbsences: absent,
     rate: counted ? present / counted : 1,
     overLimit,
   };
 }
 
-export interface StudentOverview {
-  student: Student;
-  workshops: { workshop: Workshop; stats: StudentWorkshopStats }[];
+export interface PersonOverview {
+  /** Aynı kişiyi workshoplar arasında eşleştiren anahtar (öğrenci no, yoksa e-posta). */
+  key: string;
+  /** Kişinin en son girilen bilgileri. */
+  person: Participant;
+  entries: { participant: Participant; workshop: Workshop; stats: ParticipantStats }[];
   totalAbsences: number;
   totalExcused: number;
   overLimit: boolean;
 }
 
-export function studentOverviews(db: Database): StudentOverview[] {
-  const sessionsByWorkshop = new Map<string, Session[]>();
-  for (const w of db.workshops) sessionsByWorkshop.set(w.id, sessionsOf(db, w.id));
+/**
+ * Tüm katılımcıları kişi bazında gruplar. Aynı öğrenci numarası (numara yoksa
+ * aynı e-posta) birden fazla workshop'ta geçiyorsa tek kişi olarak gösterilir.
+ */
+export function personOverviews(db: Database): PersonOverview[] {
+  const workshops = new Map(db.workshops.map((w) => [w.id, w]));
+  const sessionsByWorkshop = new Map(db.workshops.map((w) => [w.id, sessionsOf(db, w.id)]));
+  const groups = new Map<string, PersonOverview>();
 
-  return db.students.map((student) => {
-    const workshops = db.workshops
-      .filter((w) => w.studentIds.includes(student.id))
-      .map((workshop) => ({
-        workshop,
-        stats: studentStatsInWorkshop(sessionsByWorkshop.get(workshop.id) ?? [], student.id),
-      }));
-    return {
-      student,
-      workshops,
-      totalAbsences: workshops.reduce((n, x) => n + x.stats.absent, 0),
-      totalExcused: workshops.reduce((n, x) => n + x.stats.excused, 0),
-      overLimit: workshops.some((x) => x.stats.absent > x.workshop.absenceLimit),
-    };
-  });
+  for (const participant of db.participants) {
+    const workshop = workshops.get(participant.workshopId);
+    if (!workshop) continue;
+    const key = participant.studentNo
+      ? `no:${participant.studentNo}`
+      : participant.email
+        ? `mail:${participant.email.toLowerCase()}`
+        : `id:${participant.id}`;
+    const stats = participantStats(sessionsByWorkshop.get(workshop.id) ?? [], participant.id);
+    let g = groups.get(key);
+    if (!g) {
+      g = { key, person: participant, entries: [], totalAbsences: 0, totalExcused: 0, overLimit: false };
+      groups.set(key, g);
+    }
+    if (participant.createdAt > g.person.createdAt) g.person = participant;
+    g.entries.push({ participant, workshop, stats });
+    g.totalAbsences += stats.absent;
+    g.totalExcused += stats.excused;
+    if (stats.absent > workshop.absenceLimit) g.overLimit = true;
+  }
+  return [...groups.values()];
 }
 
 export const pct = (rate: number) => `%${Math.round(rate * 100)}`;
@@ -100,10 +115,9 @@ export const today = () => new Date().toLocaleDateString("sv-SE", { timeZone: "E
 /** Workshop'ta yoklaması alınmamış ilk sonraki hafta. */
 export const nextWeek = (sessions: Session[]) => sessions.reduce((m, s) => Math.max(m, s.week), 0) + 1;
 
-/** Workshop'a kayıtlı öğrencileri ada göre sıralı döner. */
-export function studentsOf(db: Database, w: Workshop): Student[] {
-  return w.studentIds
-    .map((id) => db.students.find((s) => s.id === id))
-    .filter((s) => s !== undefined)
+/** Workshop'un katılımcılarını ada göre sıralı döner. */
+export function participantsOf(db: Database, workshopId: string): Participant[] {
+  return db.participants
+    .filter((p) => p.workshopId === workshopId)
     .sort((a, b) => a.fullName.localeCompare(b.fullName, "tr"));
 }

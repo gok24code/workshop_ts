@@ -1,7 +1,7 @@
 import "server-only";
 import { randomInt } from "crypto";
 import { newId, now } from "./db";
-import type { AttendanceStatus, Database, SaveSessionInput, Student } from "./types";
+import type { AttendanceStatus, Database, SaveSessionInput } from "./types";
 
 export type { SaveSessionInput };
 
@@ -36,7 +36,7 @@ export function saveSessionIn(
 
   const allowed: AttendanceStatus[] = by === "admin" ? ["present", "absent", "excused"] : ["present", "absent"];
   const attendance: Record<string, AttendanceStatus> = {};
-  for (const sid of workshop.studentIds) {
+  for (const { id: sid } of db.participants.filter((p) => p.workshopId === workshop.id)) {
     const prev = existing?.attendance[sid];
     if (by === "instructor" && prev === "excused") {
       attendance[sid] = prev;
@@ -56,50 +56,102 @@ export function saveSessionIn(
   return id;
 }
 
-/** Öğrenci numarasına göre öğrenciyi bulur, yoksa oluşturur. */
-export function upsertStudent(
-  db: Database,
-  data: { studentNo: string; fullName: string; email?: string; department?: string },
-): Student {
-  const studentNo = data.studentNo.trim().slice(0, 30);
-  const fullName = data.fullName.trim().slice(0, 100);
-  if (!studentNo) throw new UserError("Öğrenci numarası zorunludur.");
-  const existing = db.students.find((s) => s.studentNo === studentNo);
-  if (existing) return existing;
-  if (!fullName) throw new UserError(`${studentNo} için ad soyad zorunludur.`);
-  const student: Student = {
-    id: newId(),
-    studentNo,
-    fullName,
-    email: data.email?.trim().slice(0, 120) || undefined,
-    department: data.department?.trim().slice(0, 100) || undefined,
-    createdAt: now(),
-  };
-  db.students.push(student);
-  return student;
+export interface ParticipantInput {
+  fullName: string;
+  studentNo?: string;
+  email?: string;
+  phone?: string;
+  department?: string;
 }
 
-export function enroll(db: Database, workshopId: string, studentId: string): void {
-  const workshop = db.workshops.find((w) => w.id === workshopId);
-  if (!workshop) throw new UserError("Workshop bulunamadı.");
-  if (!workshop.studentIds.includes(studentId)) workshop.studentIds.push(studentId);
+const clean = (v: string | undefined, max: number) => (v ?? "").trim().slice(0, max) || undefined;
+
+/** Katılımcı alanlarını doğrular ve kırpar. */
+export function validateParticipant(input: ParticipantInput): Required<Pick<ParticipantInput, "fullName">> & ParticipantInput {
+  const fullName = (input.fullName ?? "").trim().replace(/\s+/g, " ").slice(0, 100);
+  if (!fullName) throw new UserError("Ad soyad zorunludur.");
+  const email = clean(input.email, 120);
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new UserError(`Geçersiz e-posta: ${email}`);
+  return {
+    fullName,
+    studentNo: clean(input.studentNo, 30),
+    email,
+    phone: clean(input.phone, 30),
+    department: clean(input.department, 100),
+  };
+}
+
+const sameName = (a: string, b: string) => normalizeName(a) === normalizeName(b);
+
+/** Workshop'ta aynı kişi zaten var mı? (öğrenci numarası, numara yoksa ad soyad) */
+export function findDuplicate(db: Database, workshopId: string, p: ParticipantInput, exceptId?: string) {
+  return db.participants.find(
+    (x) =>
+      x.workshopId === workshopId &&
+      x.id !== exceptId &&
+      (p.studentNo && x.studentNo ? x.studentNo === p.studentNo : sameName(x.fullName, p.fullName)),
+  );
+}
+
+/** Katılımcıları workshop'a ekler; aynı kişi zaten varsa atlar. */
+export function addParticipants(db: Database, workshopId: string, rows: ParticipantInput[]) {
+  if (!db.workshops.some((w) => w.id === workshopId)) throw new UserError("Workshop bulunamadı.");
+  let added = 0;
+  const skipped: string[] = [];
+  for (const row of rows) {
+    const p = validateParticipant(row);
+    if (findDuplicate(db, workshopId, p)) {
+      skipped.push(p.fullName);
+      continue;
+    }
+    db.participants.push({ id: newId(), workshopId, ...p, createdAt: now() });
+    added++;
+  }
+  return { added, skipped };
+}
+
+/** Bir workshop'u katılımcıları ve yoklamalarıyla birlikte siler. */
+export function removeWorkshop(db: Database, workshopId: string) {
+  db.workshops = db.workshops.filter((w) => w.id !== workshopId);
+  db.participants = db.participants.filter((p) => p.workshopId !== workshopId);
+  db.sessions = db.sessions.filter((s) => s.workshopId !== workshopId);
+}
+
+/** Katılımcıyı ve yoklama kayıtlarını siler. */
+export function removeParticipant(db: Database, participantId: string) {
+  const p = db.participants.find((x) => x.id === participantId);
+  if (!p) return;
+  db.participants = db.participants.filter((x) => x.id !== participantId);
+  for (const s of db.sessions) if (s.workshopId === p.workshopId) delete s.attendance[participantId];
 }
 
 /**
- * Satır başına bir öğrenci: `numara, ad soyad[, e-posta[, bölüm]]`.
- * Virgül, noktalı virgül veya sekme ayırıcı olabilir.
+ * Formdaki katılımcı tablosundan gelen JSON'u doğrular. Hatalı satırlar
+ * satır numarasıyla bildirilir; tamamen boş satırlar yok sayılır.
  */
-export function parseStudentLines(text: string) {
-  return text
-    .split(/\r?\n/)
-    .slice(0, 2000)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const [studentNo = "", fullName = "", email, department] = line.split(/[,;\t]/).map((p) => p.trim());
-      return { studentNo, fullName, email, department };
-    })
-    .filter((row) => !/^(no|numara|öğrenci ?no)$/i.test(row.studentNo));
+export function parseParticipantsJson(json: string): { rows: ParticipantInput[]; errors: string[] } {
+  let data: unknown;
+  try {
+    data = JSON.parse(json || "[]");
+  } catch {
+    return { rows: [], errors: ["Katılımcı listesi okunamadı."] };
+  }
+  if (!Array.isArray(data)) return { rows: [], errors: ["Katılımcı listesi okunamadı."] };
+
+  const rows: ParticipantInput[] = [];
+  const errors: string[] = [];
+  data.slice(0, 2000).forEach((item, i) => {
+    const r = (item && typeof item === "object" ? item : {}) as Record<string, unknown>;
+    const val = (k: string) => (typeof r[k] === "string" ? (r[k] as string) : "");
+    const input = { fullName: val("fullName"), studentNo: val("studentNo"), email: val("email"), phone: val("phone"), department: val("department") };
+    if (Object.values(input).every((v) => !v.trim())) return;
+    try {
+      rows.push(validateParticipant(input));
+    } catch (err) {
+      errors.push(`${i + 1}. satır: ${err instanceof Error ? err.message : "geçersiz"}`);
+    }
+  });
+  return { rows, errors };
 }
 
 /** Giriş için workshop adını karşılaştırılabilir hale getirir (büyük/küçük harf, Türkçe karakter, boşluk). */

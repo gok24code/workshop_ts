@@ -1,10 +1,13 @@
 export type AttendanceStatus = "present" | "absent" | "excused";
 
-export interface Student {
+/** Bir workshop'a ait katılımcı. Her workshop'un katılımcı listesi kendine özeldir. */
+export interface Participant {
   id: string;
-  studentNo: string;
+  workshopId: string;
   fullName: string;
+  studentNo?: string;
   email?: string;
+  phone?: string;
   department?: string;
   createdAt: string;
 }
@@ -19,8 +22,7 @@ export interface Workshop {
   passwordHash: string;
   /** Şifre her değiştiğinde artar; eski eğitmen oturumları geçersiz olur. */
   passwordVersion: number;
-  studentIds: string[];
-  /** Bu sayıdan fazla devamsızlık yapan öğrenci uyarı alır. */
+  /** Bu sayıdan fazla devamsızlık yapan katılımcı uyarı alır. */
   absenceLimit: number;
   archived: boolean;
   createdAt: string;
@@ -32,19 +34,20 @@ export interface Session {
   week: number;
   date: string; // YYYY-MM-DD
   topic?: string;
+  /** Katılımcı id'si → durum */
   attendance: Record<string, AttendanceStatus>;
   takenBy: "admin" | "instructor";
   updatedAt: string;
 }
 
 export interface Database {
-  version: 2;
-  students: Student[];
+  version: 3;
+  participants: Participant[];
   workshops: Workshop[];
   sessions: Session[];
 }
 
-export const emptyDatabase = (): Database => ({ version: 2, students: [], workshops: [], sessions: [] });
+export const emptyDatabase = (): Database => ({ version: 3, participants: [], workshops: [], sessions: [] });
 
 export interface AdminSession {
   id: string;

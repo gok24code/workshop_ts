@@ -1,11 +1,11 @@
 import { getAdminSessionId } from "@/lib/auth";
 import { readDb } from "@/lib/db";
-import { formatDate, sessionsOf, studentsOf, studentStatsInWorkshop } from "@/lib/stats";
+import { formatDate, sessionsOf, participantsOf, participantStats } from "@/lib/stats";
 
 const LABEL = { present: "Geldi", absent: "Gelmedi", excused: "İzinli" } as const;
 
-const cell = (v: string | number) => {
-  const s = String(v);
+const cell = (v: string | number | undefined) => {
+  const s = String(v ?? "");
   // Excel formül enjeksiyonuna karşı
   const safe = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
   return /[";\n\r]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
@@ -19,15 +19,15 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   if (!workshop) return new Response("Bulunamadı", { status: 404 });
 
   const sessions = sessionsOf(db, id);
-  const header = ["Öğrenci No", "Ad Soyad", "E-posta", "Bölüm", ...sessions.map((s) => `${s.week}. hafta (${formatDate(s.date)})`), "Devamsızlık", "İzinli"];
+  const header = ["Ad Soyad", "Öğrenci No", "E-posta", "Telefon", "Bölüm", ...sessions.map((s) => `${s.week}. hafta (${formatDate(s.date)})`), "Devamsızlık", "İzinli"];
   const lines = [header.map(cell).join(";")];
-  for (const st of studentsOf(db, workshop)) {
-    const stats = studentStatsInWorkshop(sessions, st.id);
+  for (const st of participantsOf(db, workshop.id)) {
+    const stats = participantStats(sessions, st.id);
     const marks = sessions.map((s) => {
       const v = s.attendance[st.id];
       return v ? LABEL[v] : "";
     });
-    lines.push([st.studentNo, st.fullName, st.email ?? "", st.department ?? "", ...marks, stats.absent, stats.excused].map(cell).join(";"));
+    lines.push([st.fullName, st.studentNo, st.email, st.phone, st.department, ...marks, stats.absent, stats.excused].map(cell).join(";"));
   }
 
   const filename = `${workshop.title.replace(/[^\p{L}\p{N}]+/gu, "_")}_yoklama.csv`;

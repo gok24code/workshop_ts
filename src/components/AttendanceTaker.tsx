@@ -8,7 +8,7 @@ import { FormMessage } from "./forms";
 
 export interface AttendanceStudent {
   id: string;
-  studentNo: string;
+  studentNo?: string;
   fullName: string;
   /** Bu hafta hariç devamsızlık sayısı. */
   absences: number;
@@ -65,7 +65,7 @@ export function AttendanceTaker({
   const filtered = useMemo(() => {
     const q = query.trim().toLocaleLowerCase("tr");
     if (!q) return students;
-    return students.filter((s) => s.fullName.toLocaleLowerCase("tr").includes(q) || s.studentNo.includes(q));
+    return students.filter((s) => s.fullName.toLocaleLowerCase("tr").includes(q) || s.studentNo?.includes(q));
   }, [students, query]);
 
   const counts = { present: 0, absent: 0, excused: 0, unmarked: 0 };
@@ -84,7 +84,7 @@ export function AttendanceTaker({
 
   const submit = () => {
     if (counts.unmarked > 0) {
-      setState({ error: `${counts.unmarked} öğrenci işaretlenmedi. Kaydetmeden önce herkesi işaretleyin.` });
+      setState({ error: `${counts.unmarked} katılımcı işaretlenmedi. Kaydetmeden önce herkesi işaretleyin.` });
       return;
     }
     startTransition(async () => {
@@ -120,7 +120,7 @@ export function AttendanceTaker({
       </div>
 
       <div className="card divide-y divide-navy-100 overflow-hidden">
-        {filtered.length === 0 && <div className="p-6 text-center text-sm text-navy-700/60">Öğrenci bulunamadı.</div>}
+        {filtered.length === 0 && <div className="p-6 text-center text-sm text-navy-700/60">Katılımcı bulunamadı.</div>}
         {filtered.map((s) => {
           const current = attendance[s.id];
           const projected = s.absences + (current === "absent" ? 1 : 0);
@@ -131,7 +131,7 @@ export function AttendanceTaker({
               <div className="min-w-0 flex-1 basis-40">
                 <div className="truncate font-semibold text-navy-900">{s.fullName}</div>
                 <div className="text-xs text-navy-700/60">
-                  {s.studentNo} ·{" "}
+                  {s.studentNo && <>{s.studentNo} · </>}
                   <span className={over ? "font-semibold text-red-600" : ""}>
                     {projected}/{absenceLimit} devamsızlık{over && " – sınır aşıldı"}
                   </span>

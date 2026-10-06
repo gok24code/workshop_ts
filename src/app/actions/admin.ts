@@ -7,13 +7,16 @@ import { requireAdmin } from "@/lib/auth";
 import { mutateAdminSessions, mutateDb, newId, now } from "@/lib/db";
 import { int, str, type FormState } from "@/lib/forms";
 import {
-  enroll,
+  addParticipants,
+  findDuplicate,
   generatePassword,
   normalizeName,
-  parseStudentLines,
+  parseParticipantsJson,
+  removeParticipant,
+  removeWorkshop,
   saveSessionIn,
-  upsertStudent,
   UserError,
+  validateParticipant,
   type SaveSessionInput,
 } from "@/lib/mutations";
 import type { Database } from "@/lib/types";
@@ -59,25 +62,30 @@ export async function createWorkshop(_: FormState, fd: FormData): Promise<FormSt
   return run(async () => {
     const title = str(fd, "title", 120);
     if (!title) throw new UserError("Workshop adı zorunludur.");
+    const { rows, errors } = parseParticipantsJson(str(fd, "participants", 500_000));
+    if (errors.length) throw new UserError(`Katılımcı listesinde hata var — ${errors.slice(0, 5).join(" · ")}`);
+    if (!rows.length) throw new UserError("Workshop'u açarken en az bir katılımcı girin.");
     const password = passwordFrom(fd);
     const passwordHash = await bcrypt.hash(password, 12);
-    await mutateDb((db) => {
+    const id = newId();
+    const { added, skipped } = await mutateDb((db) => {
       assertUniqueTitle(db, title);
       db.workshops.push({
-        id: newId(),
+        id,
         title,
         description: str(fd, "description", 500) || undefined,
         instructorName: str(fd, "instructorName", 100) || undefined,
         passwordHash,
         passwordVersion: 1,
-        studentIds: [],
         absenceLimit: int(fd, "absenceLimit", 2, 52),
         archived: false,
         createdAt: now(),
       });
+      return addParticipants(db, id, rows);
     });
+    const dup = skipped.length ? ` (${skipped.length} tekrar eden satır atlandı)` : "";
     return {
-      ok: `“${title}” oluşturuldu. Eğitmen girişi için şifre aşağıda; bu şifre bir daha gösterilmeyecek.`,
+      ok: `“${title}” ${added} katılımcıyla oluşturuldu${dup}. Eğitmen girişi için şifre aşağıda; bu şifre bir daha gösterilmeyecek.`,
       secret: password,
     };
   });
@@ -120,47 +128,52 @@ export async function resetWorkshopPassword(_: FormState, fd: FormData): Promise
 export async function deleteWorkshop(fd: FormData): Promise<void> {
   await requireAdmin();
   const id = str(fd, "id");
-  await mutateDb((db) => {
-    db.workshops = db.workshops.filter((w) => w.id !== id);
-    db.sessions = db.sessions.filter((s) => s.workshopId !== id);
-  });
+  await mutateDb((db) => removeWorkshop(db, id));
   revalidateAll();
   redirect("/admin/workshoplar");
 }
 
-export async function enrollStudents(_: FormState, fd: FormData): Promise<FormState> {
+export async function addParticipantsToWorkshop(_: FormState, fd: FormData): Promise<FormState> {
   return run(async () => {
     const workshopId = str(fd, "workshopId");
-    const ids = fd.getAll("studentIds").map(String);
-    const rows = parseStudentLines(str(fd, "bulk", 200_000));
-    const added = await mutateDb((db) => {
-      let count = 0;
-      for (const id of ids) {
-        if (db.students.some((s) => s.id === id)) {
-          enroll(db, workshopId, id);
-          count++;
-        }
-      }
-      for (const row of rows) {
-        enroll(db, workshopId, upsertStudent(db, row).id);
-        count++;
-      }
-      return count;
-    });
-    if (!added) throw new UserError("Eklenecek öğrenci seçilmedi.");
-    return `${added} öğrenci workshop'a eklendi.`;
+    const { rows, errors } = parseParticipantsJson(str(fd, "participants", 500_000));
+    if (errors.length) throw new UserError(`Katılımcı listesinde hata var — ${errors.slice(0, 5).join(" · ")}`);
+    if (!rows.length) throw new UserError("En az bir katılımcı girin.");
+    const { added, skipped } = await mutateDb((db) => addParticipants(db, workshopId, rows));
+    const dup = skipped.length ? ` ${skipped.length} kişi zaten listede olduğu için atlandı: ${skipped.slice(0, 5).join(", ")}` : "";
+    return `${added} katılımcı eklendi.${dup}`;
   });
 }
 
-export async function unenrollStudent(fd: FormData): Promise<void> {
+export async function updateParticipant(_: FormState, fd: FormData): Promise<FormState> {
+  return run(async () => {
+    const id = str(fd, "id");
+    const data = validateParticipant({
+      fullName: str(fd, "fullName", 100),
+      studentNo: str(fd, "studentNo", 30),
+      email: str(fd, "email", 120),
+      phone: str(fd, "phone", 30),
+      department: str(fd, "department", 100),
+    });
+    await mutateDb((db) => {
+      const p = db.participants.find((x) => x.id === id);
+      if (!p) throw new UserError("Katılımcı bulunamadı.");
+      if (findDuplicate(db, p.workshopId, data, id)) throw new UserError("Bu workshop'ta aynı kişi zaten kayıtlı.");
+      Object.assign(p, { studentNo: undefined, email: undefined, phone: undefined, department: undefined }, data);
+    });
+  });
+}
+
+export async function deleteParticipant(fd: FormData): Promise<void> {
   await requireAdmin();
-  const workshopId = str(fd, "workshopId");
-  const studentId = str(fd, "studentId");
-  await mutateDb((db) => {
-    const w = db.workshops.find((x) => x.id === workshopId);
-    if (w) w.studentIds = w.studentIds.filter((id) => id !== studentId);
+  const id = str(fd, "id");
+  const workshopId = await mutateDb((db) => {
+    const wid = db.participants.find((p) => p.id === id)?.workshopId;
+    removeParticipant(db, id);
+    return wid;
   });
   revalidateAll();
+  if (fd.get("redirect") === "1" && workshopId) redirect(`/admin/workshoplar/${encodeURIComponent(workshopId)}`);
 }
 
 export async function adminSaveSession(input: SaveSessionInput): Promise<FormState> {
@@ -179,54 +192,6 @@ export async function adminDeleteSession(fd: FormData): Promise<void> {
   });
   revalidateAll();
   redirect(`/admin/workshoplar/${encodeURIComponent(workshopId)}`);
-}
-
-/* ---------------------------- Öğrenciler ---------------------------- */
-
-export async function importStudents(_: FormState, fd: FormData): Promise<FormState> {
-  return run(async () => {
-    const rows = parseStudentLines(str(fd, "bulk", 200_000));
-    if (!rows.length) throw new UserError("En az bir satır girin: numara, ad soyad, e-posta, bölüm");
-    const created = await mutateDb((db) => {
-      const before = db.students.length;
-      for (const row of rows) upsertStudent(db, row);
-      return db.students.length - before;
-    });
-    const existing = rows.length - created;
-    return `${created} yeni öğrenci eklendi${existing ? `, ${existing} zaten kayıtlıydı` : ""}.`;
-  });
-}
-
-export async function updateStudent(_: FormState, fd: FormData): Promise<FormState> {
-  return run(async () => {
-    const id = str(fd, "id");
-    const studentNo = str(fd, "studentNo", 30);
-    const fullName = str(fd, "fullName", 100);
-    if (!studentNo || !fullName) throw new UserError("Numara ve ad soyad zorunludur.");
-    await mutateDb((db) => {
-      const s = db.students.find((x) => x.id === id);
-      if (!s) throw new UserError("Öğrenci bulunamadı.");
-      if (db.students.some((x) => x.id !== id && x.studentNo === studentNo)) {
-        throw new UserError("Bu numara başka bir öğrenciye ait.");
-      }
-      s.studentNo = studentNo;
-      s.fullName = fullName;
-      s.email = str(fd, "email", 120) || undefined;
-      s.department = str(fd, "department", 100) || undefined;
-    });
-  });
-}
-
-export async function deleteStudent(fd: FormData): Promise<void> {
-  await requireAdmin();
-  const id = str(fd, "id");
-  await mutateDb((db) => {
-    db.students = db.students.filter((s) => s.id !== id);
-    for (const w of db.workshops) w.studentIds = w.studentIds.filter((x) => x !== id);
-    for (const s of db.sessions) delete s.attendance[id];
-  });
-  revalidateAll();
-  redirect("/admin/ogrenciler");
 }
 
 /* ---------------------------- Admin oturumları ---------------------------- */

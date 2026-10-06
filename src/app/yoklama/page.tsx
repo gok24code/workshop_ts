@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { Empty, StatCard } from "@/components/ui";
 import { requireInstructor } from "@/lib/auth";
-import { formatDate, nextWeek, pct, sessionsOf, studentsOf, studentStatsInWorkshop, workshopStats } from "@/lib/stats";
+import { formatDate, nextWeek, pct, sessionsOf, participantsOf, participantStats, workshopStats } from "@/lib/stats";
 
 export default async function InstructorHome() {
   const { workshop, db } = await requireInstructor();
   const sessions = sessionsOf(db, workshop.id);
-  const students = studentsOf(db, workshop);
+  const students = participantsOf(db, workshop.id);
   const stats = workshopStats(db, workshop);
 
   return (
@@ -16,7 +16,7 @@ export default async function InstructorHome() {
       </Link>
 
       <div className="grid grid-cols-3 gap-3">
-        <StatCard label="Öğrenci" value={stats.studentCount} />
+        <StatCard label="Katılımcı" value={stats.participantCount} />
         <StatCard label="Hafta" value={stats.sessionCount} />
         <StatCard accent label="Katılım" value={pct(stats.rate)} />
       </div>
@@ -47,13 +47,13 @@ export default async function InstructorHome() {
       </section>
 
       <section>
-        <h2 className="mb-3 text-base font-bold text-navy-900">Öğrenciler ve devamsızlık</h2>
+        <h2 className="mb-3 text-base font-bold text-navy-900">Katılımcılar ve devamsızlık</h2>
         {students.length === 0 ? (
-          <Empty>Bu workshop&apos;a henüz öğrenci tanımlanmadı. Yönetimle iletişime geçin.</Empty>
+          <Empty>Bu workshop&apos;a henüz katılımcı tanımlanmadı. Yönetimle iletişime geçin.</Empty>
         ) : (
           <div className="card divide-y divide-navy-100">
             {students.map((s) => {
-              const st = studentStatsInWorkshop(sessions, s.id);
+              const st = participantStats(sessions, s.id);
               const over = st.absent > workshop.absenceLimit;
               return (
                 <div key={s.id} className="flex items-center justify-between gap-3 px-4 py-3">

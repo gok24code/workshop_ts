@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { instructorSaveSession } from "@/app/actions/instructor";
 import { AttendanceTaker } from "@/components/AttendanceTaker";
 import { requireInstructor } from "@/lib/auth";
-import { sessionsOf, studentsOf, studentStatsInWorkshop } from "@/lib/stats";
+import { sessionsOf, participantsOf, participantStats } from "@/lib/stats";
 
 export default async function EditWeekPage({ params }: { params: Promise<{ sessionId: string }> }) {
   const { sessionId } = await params;
@@ -26,7 +26,7 @@ export default async function EditWeekPage({ params }: { params: Promise<{ sessi
         initialAttendance={session.attendance}
         absenceLimit={workshop.absenceLimit}
         allowExcused={false}
-        students={studentsOf(db, workshop).map((s) => ({ id: s.id, studentNo: s.studentNo, fullName: s.fullName, absences: studentStatsInWorkshop(others, s.id).absent }))}
+        students={participantsOf(db, workshop.id).map((s) => ({ id: s.id, studentNo: s.studentNo, fullName: s.fullName, absences: participantStats(others, s.id).absent }))}
         save={instructorSaveSession}
         doneHref="/yoklama"
       />

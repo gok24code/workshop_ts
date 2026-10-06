@@ -2,6 +2,7 @@ import "server-only";
 import { promises as fs } from "fs";
 import path from "path";
 import { getJSON, putJSON, PreconditionFailedError } from "./r2";
+import { migrate } from "./migrate";
 import { emptyDatabase, type AdminSession, type Database, type LoginFailure } from "./types";
 
 const MAX_RETRIES = 5;
@@ -34,10 +35,20 @@ async function save(key: string, data: unknown, etag: string | null): Promise<vo
   await putJSON(key, data, etag);
 }
 
-/** Bir JSON dokümanını atomik olarak günceller; eşzamanlı yazmada yeniden dener. */
-async function mutate<T, R>(key: string, fallback: () => T, fn: (data: T) => R): Promise<R> {
+/**
+ * Bir JSON dokümanını atomik olarak günceller; eşzamanlı yazmada yeniden dener.
+ * `prepare`, okunan veriyi (ör. eski sürümden taşıyarak) güncellemeden önce dönüştürür.
+ */
+async function mutate<T, R>(
+  key: string,
+  fallback: () => T,
+  fn: (data: T) => R,
+  prepare: (raw: T) => T = (x) => x,
+): Promise<R> {
   for (let attempt = 0; ; attempt++) {
-    const { data, etag } = await load(key, fallback);
+    const loaded = await load(key, fallback);
+    const data = prepare(loaded.data);
+    const etag = loaded.etag;
     const result = fn(data);
     try {
       await save(key, data, etag);
@@ -49,12 +60,14 @@ async function mutate<T, R>(key: string, fallback: () => T, fn: (data: T) => R):
   }
 }
 
-/* ---- Ana veritabanı: öğrenciler, workshoplar, yoklamalar ---- */
+/* ---- Ana veritabanı: katılımcılar, workshoplar, yoklamalar ---- */
 
 const DB_KEY = "wts/db.json";
 
-export const readDb = async (): Promise<Database> => (await load(DB_KEY, emptyDatabase)).data;
-export const mutateDb = <R>(fn: (db: Database) => R) => mutate(DB_KEY, emptyDatabase, fn);
+export const readDb = async (): Promise<Database> => migrate((await load(DB_KEY, emptyDatabase)).data);
+
+/** Eski sürümdeki veri ilk yazmada yeni yapıya kalıcı olarak taşınır. */
+export const mutateDb = <R>(fn: (db: Database) => R) => mutate(DB_KEY, emptyDatabase, fn, migrate);
 
 /* ---- Admin oturumları ---- */
 

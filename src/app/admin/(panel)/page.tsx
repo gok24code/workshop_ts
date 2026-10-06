@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { readDb } from "@/lib/db";
-import { formatDate, pct, studentOverviews, workshopStats } from "@/lib/stats";
+import { formatDate, pct, personOverviews, workshopStats } from "@/lib/stats";
 import { AbsenceBadge, Empty, PageHeader, RateBar, StatCard } from "@/components/ui";
 
 export default async function AdminHome() {
@@ -20,12 +20,9 @@ export default async function AdminHome() {
   }
   const overall = present + absent ? present / (present + absent) : 1;
 
-  const overLimit = studentOverviews(db)
-    .flatMap((o) =>
-      o.workshops
-        .filter((x) => !x.workshop.archived && x.stats.absent > x.workshop.absenceLimit)
-        .map((x) => ({ student: o.student, ...x })),
-    )
+  const overLimit = personOverviews(db)
+    .flatMap((o) => o.entries)
+    .filter((x) => !x.workshop.archived && x.stats.absent > x.workshop.absenceLimit)
     .sort((a, b) => b.stats.absent - a.stats.absent);
 
   const recent = [...db.sessions].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 6);
@@ -37,7 +34,7 @@ export default async function AdminHome() {
       <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard accent label="Genel katılım" value={pct(overall)} hint={`${absent} toplam devamsızlık`} />
         <StatCard label="Aktif workshop" value={active.length} hint={`${db.workshops.length - active.length} arşivde`} />
-        <StatCard label="Öğrenci" value={db.students.length} />
+        <StatCard label="Katılımcı" value={db.participants.length} />
         <StatCard label="Alınan yoklama" value={db.sessions.length} hint="hafta" />
       </div>
 
@@ -55,7 +52,7 @@ export default async function AdminHome() {
                 <tr>
                   <th>Workshop</th>
                   <th>Eğitmen</th>
-                  <th className="text-center">Öğrenci</th>
+                  <th className="text-center">Katılımcı</th>
                   <th className="text-center">Hafta</th>
                   <th className="text-center">Devamsızlık</th>
                   <th>Katılım</th>
@@ -67,7 +64,7 @@ export default async function AdminHome() {
                   <tr key={w.id}>
                     <td><Link href={`/admin/workshoplar/${w.id}`} className="font-semibold hover:text-gold-600">{w.title}</Link></td>
                     <td className="text-navy-700/80">{w.instructorName || "—"}</td>
-                    <td className="text-center tabular-nums">{s.studentCount}</td>
+                    <td className="text-center tabular-nums">{s.participantCount}</td>
                     <td className="text-center tabular-nums">{s.sessionCount}</td>
                     <td className="text-center tabular-nums">{s.totalAbsences}</td>
                     <td><RateBar rate={s.rate} /></td>
@@ -86,14 +83,14 @@ export default async function AdminHome() {
         <section>
           <h2 className="mb-3 text-lg font-bold">Devamsızlık sınırını aşanlar</h2>
           {overLimit.length === 0 ? (
-            <Empty>Sınırı aşan öğrenci yok.</Empty>
+            <Empty>Sınırı aşan katılımcı yok.</Empty>
           ) : (
             <div className="card divide-y divide-navy-100">
               {overLimit.slice(0, 12).map((x) => (
-                <Link key={x.student.id + x.workshop.id} href={`/admin/ogrenciler/${x.student.id}`} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-navy-50">
+                <Link key={x.participant.id} href={`/admin/workshoplar/${x.workshop.id}/katilimci/${x.participant.id}`} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-navy-50">
                   <div className="min-w-0">
-                    <div className="truncate font-semibold">{x.student.fullName}</div>
-                    <div className="truncate text-xs text-navy-700/60">{x.student.studentNo} · {x.workshop.title}</div>
+                    <div className="truncate font-semibold">{x.participant.fullName}</div>
+                    <div className="truncate text-xs text-navy-700/60">{[x.participant.studentNo, x.workshop.title].filter(Boolean).join(" · ")}</div>
                   </div>
                   <AbsenceBadge count={x.stats.absent} limit={x.workshop.absenceLimit} />
                 </Link>

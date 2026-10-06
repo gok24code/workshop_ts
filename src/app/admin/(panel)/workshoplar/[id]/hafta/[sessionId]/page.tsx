@@ -5,7 +5,7 @@ import { ConfirmForm } from "@/components/forms";
 import { PageHeader } from "@/components/ui";
 import { requireAdmin } from "@/lib/auth";
 import { readDb } from "@/lib/db";
-import { formatDate, sessionsOf, studentsOf, studentStatsInWorkshop } from "@/lib/stats";
+import { formatDate, sessionsOf, participantsOf, participantStats } from "@/lib/stats";
 
 export default async function AdminEditWeekPage({ params }: { params: Promise<{ id: string; sessionId: string }> }) {
   await requireAdmin();
@@ -40,7 +40,7 @@ export default async function AdminEditWeekPage({ params }: { params: Promise<{ 
         absenceLimit={workshop.absenceLimit}
         allowExcused
         sidebar
-        students={studentsOf(db, workshop).map((s) => ({ id: s.id, studentNo: s.studentNo, fullName: s.fullName, absences: studentStatsInWorkshop(others, s.id).absent }))}
+        students={participantsOf(db, workshop.id).map((s) => ({ id: s.id, studentNo: s.studentNo, fullName: s.fullName, absences: participantStats(others, s.id).absent }))}
         save={adminSaveSession}
         doneHref={`/admin/workshoplar/${id}`}
       />
