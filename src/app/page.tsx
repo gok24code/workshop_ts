@@ -3,11 +3,15 @@ import { instructorLogin } from "@/app/actions/auth";
 import { ActionForm, SubmitButton } from "@/components/forms";
 import { LogoMark, OrgFooter } from "@/components/Logo";
 import { getInstructorWorkshop } from "@/lib/auth";
+import { readDb } from "@/lib/db";
 
 export const metadata = { title: "Eğitmen Girişi" };
 
 export default async function InstructorLoginPage() {
   if (await getInstructorWorkshop()) redirect("/yoklama");
+  const workshops = (await readDb()).workshops
+    .filter((w) => !w.archived)
+    .sort((a, b) => a.title.localeCompare(b.title, "tr"));
   return (
     <div className="bg-navy-gradient relative flex min-h-dvh flex-col overflow-hidden text-white">
       <div className="pointer-events-none absolute -top-40 -right-40 h-[420px] w-[420px] rounded-full bg-gold-500/10 blur-3xl" />
@@ -22,11 +26,18 @@ export default async function InstructorLoginPage() {
           <div className="bg-gold-gradient h-1" />
           <div className="p-6">
             <h2 className="text-lg font-bold">Eğitmen Girişi</h2>
-            <p className="mt-1 mb-5 text-sm text-navy-700/70">Workshop adını ve size verilen şifreyi girin.</p>
+            <p className="mt-1 mb-5 text-sm text-navy-700/70">Workshop&apos;unuzu seçin ve size verilen şifreyi girin.</p>
             <ActionForm action={instructorLogin} className="space-y-4">
               <div>
-                <label className="label" htmlFor="workshop">Workshop adı</label>
-                <input id="workshop" name="workshop" className="input py-3 text-base" autoComplete="username" autoCapitalize="words" required maxLength={120} />
+                <label className="label" htmlFor="workshop">Workshop</label>
+                <select id="workshop" name="workshop" className="input py-3 text-base" required defaultValue="">
+                  <option value="" disabled>
+                    {workshops.length ? "Workshop seçin" : "Aktif workshop yok"}
+                  </option>
+                  {workshops.map((w) => (
+                    <option key={w.id} value={w.id}>{w.title}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="label" htmlFor="password">Şifre</label>
