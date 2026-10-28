@@ -28,7 +28,7 @@ export default async function MembersPage() {
               <div key={s.id} className="flex items-center justify-between gap-3 px-4 py-3">
                 <div className="min-w-0">
                   <div className="truncate font-semibold">{s.fullName}</div>
-                  <div className="text-xs text-navy-700/60">{s.studentNo ?? s.email ?? ""}</div>
+                  {s.department && <div className="text-xs text-navy-700/60">{s.department}</div>}
                 </div>
                 <ConfirmForm
                   action={instructorDeleteParticipant}
@@ -47,7 +47,7 @@ export default async function MembersPage() {
       <div className="card p-5">
         <h2 className="mb-1 text-lg font-bold">Katılımcı ekle</h2>
         <p className="mb-4 text-sm text-navy-700/60">
-          Listede zaten olan kişiler (aynı öğrenci no, numara yoksa aynı ad soyad) tekrar eklenmez.
+          Listede zaten olan kişiler (aynı ad soyad) tekrar eklenmez.
         </p>
         <ActionForm action={instructorAddParticipants} resetOnSuccess className="space-y-4">
           <ParticipantsInput required initialRows={1} />

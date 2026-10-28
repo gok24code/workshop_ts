@@ -20,7 +20,7 @@ export default async function AllParticipantsPage({
     .filter((o) => {
       if (!query) return true;
       const p = o.person;
-      return [p.fullName, p.studentNo, p.email, p.phone, p.department].some((v) => v?.toLocaleLowerCase("tr").includes(query));
+      return [p.fullName, p.department].some((v) => v?.toLocaleLowerCase("tr").includes(query));
     })
     .sort((a, b) => b.totalAbsences - a.totalAbsences || a.person.fullName.localeCompare(b.person.fullName, "tr"));
 
@@ -30,11 +30,11 @@ export default async function AllParticipantsPage({
     <>
       <PageHeader
         title="Tüm Katılımcılar"
-        subtitle={`${db.participants.length} kayıt · aynı öğrenci numarası birden fazla workshop'taysa tek satırda gösterilir`}
+        subtitle={`${db.participants.length} kayıt · aynı ad soyad birden fazla workshop'taysa tek satırda gösterilir`}
       />
 
       <form className="mb-4 flex flex-wrap gap-2">
-        <input name="q" defaultValue={q} placeholder="İsim, numara, e-posta, telefon, bölüm…" className="input max-w-xs" maxLength={100} />
+        <input name="q" defaultValue={q} placeholder="İsim, bölüm…" className="input max-w-xs" maxLength={100} />
         <select name="workshop" defaultValue={workshop} className="input w-auto">
           <option value="">Tüm workshoplar</option>
           {workshops.map((w) => <option key={w.id} value={w.id}>{w.title}</option>)}
@@ -54,7 +54,6 @@ export default async function AllParticipantsPage({
             <thead>
               <tr>
                 <th>Katılımcı</th>
-                <th>İletişim</th>
                 <th>Workshop · devamsızlık</th>
                 <th className="text-center">Toplam</th>
               </tr>
@@ -64,12 +63,7 @@ export default async function AllParticipantsPage({
                 <tr key={key} className={overLimit ? "bg-red-50/60" : undefined}>
                   <td>
                     <div className="font-semibold">{person.fullName}</div>
-                    <div className="text-xs text-navy-700/60">{[person.studentNo, person.department].filter(Boolean).join(" · ") || "—"}</div>
-                  </td>
-                  <td className="text-xs">
-                    {person.email && <div><a href={`mailto:${person.email}`} className="hover:text-gold-600">{person.email}</a></div>}
-                    {person.phone && <div><a href={`tel:${person.phone.replace(/\s/g, "")}`} className="hover:text-gold-600">{person.phone}</a></div>}
-                    {!person.email && !person.phone && <span className="text-navy-700/40">—</span>}
+                    <div className="text-xs text-navy-700/60">{person.department || "—"}</div>
                   </td>
                   <td>
                     <div className="flex flex-wrap gap-1.5">

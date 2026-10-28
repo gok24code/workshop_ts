@@ -90,7 +90,7 @@ export default async function AdminHome() {
                 <Link key={x.participant.id} href={`/admin/workshoplar/${x.workshop.id}/katilimci/${x.participant.id}`} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-navy-50">
                   <div className="min-w-0">
                     <div className="truncate font-semibold">{x.participant.fullName}</div>
-                    <div className="truncate text-xs text-navy-700/60">{[x.participant.studentNo, x.workshop.title].filter(Boolean).join(" · ")}</div>
+                    <div className="truncate text-xs text-navy-700/60">{x.workshop.title}</div>
                   </div>
                   <AbsenceBadge count={x.stats.absent} limit={x.workshop.absenceLimit} />
                 </Link>

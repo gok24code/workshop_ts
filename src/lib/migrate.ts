@@ -17,6 +17,12 @@ function stableId(...parts: string[]): string {
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20, 32)}`;
 }
 
+/** Artık tutulmayan iletişim/numara alanlarını eski kayıtlardan temizler. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
+function stripContact({ studentNo, email, phone, ...rest }: any): Participant {
+  return rest;
+}
+
 /**
  * Eski sürümdeki ortak öğrenci havuzunu (v2) workshop'a özel katılımcılara (v3)
  * dönüştürür. Bir öğrenci birden fazla workshop'taysa her workshop için ayrı
@@ -25,7 +31,7 @@ function stableId(...parts: string[]): string {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function migrate(raw: any): Database {
   if (!raw || typeof raw !== "object") return emptyDatabase();
-  if (raw.version === 3) return raw as Database;
+  if (raw.version === 3) return { ...raw, participants: (raw.participants ?? []).map(stripContact) } as Database;
 
   const students: StudentV2[] = raw.students ?? [];
   const byId = new Map(students.map((s) => [s.id, s]));
@@ -44,8 +50,6 @@ export function migrate(raw: any): Database {
         id,
         workshopId: w.id,
         fullName: st.fullName,
-        studentNo: st.studentNo || undefined,
-        email: st.email,
         department: st.department,
         createdAt: st.createdAt,
       });

@@ -8,7 +8,6 @@ import { FormMessage } from "./forms";
 
 export interface AttendanceStudent {
   id: string;
-  studentNo?: string;
   fullName: string;
   /** Bu hafta hariç devamsızlık sayısı. */
   absences: number;
@@ -65,7 +64,7 @@ export function AttendanceTaker({
   const filtered = useMemo(() => {
     const q = query.trim().toLocaleLowerCase("tr");
     if (!q) return students;
-    return students.filter((s) => s.fullName.toLocaleLowerCase("tr").includes(q) || s.studentNo?.includes(q));
+    return students.filter((s) => s.fullName.toLocaleLowerCase("tr").includes(q));
   }, [students, query]);
 
   const counts = { present: 0, absent: 0, excused: 0, unmarked: 0 };
@@ -115,7 +114,7 @@ export function AttendanceTaker({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <input className="input min-w-0 flex-1 sm:max-w-xs" placeholder="İsim veya numara ara…" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <input className="input min-w-0 flex-1 sm:max-w-xs" placeholder="İsim ara…" value={query} onChange={(e) => setQuery(e.target.value)} />
         <button type="button" className="btn-ghost" onClick={() => markRest("present")}>Kalanlar geldi</button>
       </div>
 
@@ -131,7 +130,6 @@ export function AttendanceTaker({
               <div className="min-w-0 flex-1 basis-40">
                 <div className="truncate font-semibold text-navy-900">{s.fullName}</div>
                 <div className="text-xs text-navy-700/60">
-                  {s.studentNo && <>{s.studentNo} · </>}
                   <span className={over ? "font-semibold text-red-600" : ""}>
                     {projected}/{absenceLimit} devamsızlık{over && " – sınır aşıldı"}
                   </span>

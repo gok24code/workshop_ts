@@ -19,7 +19,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   if (!workshop) return new Response("Bulunamadı", { status: 404 });
 
   const sessions = sessionsOf(db, id);
-  const header = ["Ad Soyad", "Öğrenci No", "E-posta", "Telefon", "Bölüm", ...sessions.map((s) => `${s.week}. hafta (${formatDate(s.date)})`), "Devamsızlık", "İzinli"];
+  const header = ["Ad Soyad", "Bölüm", ...sessions.map((s) => `${s.week}. hafta (${formatDate(s.date)})`), "Devamsızlık", "İzinli"];
   const lines = [header.map(cell).join(";")];
   for (const st of participantsOf(db, workshop.id)) {
     const stats = participantStats(sessions, st.id);
@@ -27,7 +27,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       const v = s.attendance[st.id];
       return v ? LABEL[v] : "";
     });
-    lines.push([st.fullName, st.studentNo, st.email, st.phone, st.department, ...marks, stats.absent, stats.excused].map(cell).join(";"));
+    lines.push([st.fullName, st.department, ...marks, stats.absent, stats.excused].map(cell).join(";"));
   }
 
   const filename = `${workshop.title.replace(/[^\p{L}\p{N}]+/gu, "_")}_yoklama.csv`;

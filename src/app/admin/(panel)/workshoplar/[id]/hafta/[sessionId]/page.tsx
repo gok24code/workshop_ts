@@ -40,7 +40,7 @@ export default async function AdminEditWeekPage({ params }: { params: Promise<{ 
         absenceLimit={workshop.absenceLimit}
         allowExcused
         sidebar
-        students={participantsOf(db, workshop.id).map((s) => ({ id: s.id, studentNo: s.studentNo, fullName: s.fullName, absences: participantStats(others, s.id).absent }))}
+        students={participantsOf(db, workshop.id).map((s) => ({ id: s.id, fullName: s.fullName, absences: participantStats(others, s.id).absent }))}
         save={adminSaveSession}
         doneHref={`/admin/workshoplar/${id}`}
       />

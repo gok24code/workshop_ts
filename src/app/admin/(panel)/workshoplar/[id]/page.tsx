@@ -93,7 +93,7 @@ export default async function AdminWorkshopPage({ params }: { params: Promise<{ 
       <div className="card mt-8 p-5">
         <h2 className="mb-1 text-lg font-bold">Katılımcı ekle</h2>
         <p className="mb-4 text-sm text-navy-700/60">
-          Listede zaten olan kişiler (aynı öğrenci no, numara yoksa aynı ad soyad) tekrar eklenmez.
+          Listede zaten olan kişiler (aynı ad soyad) tekrar eklenmez.
         </p>
         <ActionForm action={addParticipantsToWorkshop} resetOnSuccess className="space-y-4">
           <input type="hidden" name="workshopId" value={workshop.id} />

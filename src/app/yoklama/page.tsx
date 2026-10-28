@@ -62,7 +62,7 @@ export default async function InstructorHome() {
                 <div key={s.id} className="flex items-center justify-between gap-3 px-4 py-3">
                   <div className="min-w-0">
                     <div className="truncate font-semibold">{s.fullName}</div>
-                    <div className="text-xs text-navy-700/60">{s.studentNo}</div>
+                    {s.department && <div className="text-xs text-navy-700/60">{s.department}</div>}
                   </div>
                   <span className={`text-sm font-bold tabular-nums ${over ? "text-red-600" : "text-navy-800"}`}>
                     {st.absent}/{workshop.absenceLimit}

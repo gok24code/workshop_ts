@@ -60,7 +60,7 @@ export function workshopStats(db: Database, w: Workshop): WorkshopStats {
 }
 
 export interface PersonOverview {
-  /** Aynı kişiyi workshoplar arasında eşleştiren anahtar (öğrenci no, yoksa e-posta). */
+  /** Aynı kişiyi workshoplar arasında eşleştiren anahtar (ad soyad). */
   key: string;
   /** Kişinin en son girilen bilgileri. */
   person: Participant;
@@ -71,8 +71,8 @@ export interface PersonOverview {
 }
 
 /**
- * Tüm katılımcıları kişi bazında gruplar. Aynı öğrenci numarası (numara yoksa
- * aynı e-posta) birden fazla workshop'ta geçiyorsa tek kişi olarak gösterilir.
+ * Tüm katılımcıları kişi bazında gruplar. Aynı ad soyad birden fazla
+ * workshop'ta geçiyorsa tek kişi olarak gösterilir.
  */
 export function personOverviews(db: Database): PersonOverview[] {
   const workshops = new Map(db.workshops.map((w) => [w.id, w]));
@@ -82,11 +82,7 @@ export function personOverviews(db: Database): PersonOverview[] {
   for (const participant of db.participants) {
     const workshop = workshops.get(participant.workshopId);
     if (!workshop) continue;
-    const key = participant.studentNo
-      ? `no:${participant.studentNo}`
-      : participant.email
-        ? `mail:${participant.email.toLowerCase()}`
-        : `id:${participant.id}`;
+    const key = `ad:${normalizeName(participant.fullName)}`;
     const stats = participantStats(sessionsByWorkshop.get(workshop.id) ?? [], participant.id);
     let g = groups.get(key);
     if (!g) {
@@ -120,4 +116,15 @@ export function participantsOf(db: Database, workshopId: string): Participant[] 
   return db.participants
     .filter((p) => p.workshopId === workshopId)
     .sort((a, b) => a.fullName.localeCompare(b.fullName, "tr"));
+}
+
+/** Giriş için workshop adını karşılaştırılabilir hale getirir (büyük/küçük harf, Türkçe karakter, boşluk). */
+export function normalizeName(name: string): string {
+  return name
+    .toLocaleLowerCase("tr")
+    .replace(/ı/g, "i")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
 }

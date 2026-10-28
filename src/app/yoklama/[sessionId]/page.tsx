@@ -26,7 +26,7 @@ export default async function EditWeekPage({ params }: { params: Promise<{ sessi
         initialAttendance={session.attendance}
         absenceLimit={workshop.absenceLimit}
         allowExcused={false}
-        students={participantsOf(db, workshop.id).map((s) => ({ id: s.id, studentNo: s.studentNo, fullName: s.fullName, absences: participantStats(others, s.id).absent }))}
+        students={participantsOf(db, workshop.id).map((s) => ({ id: s.id, fullName: s.fullName, absences: participantStats(others, s.id).absent }))}
         save={instructorSaveSession}
         doneHref="/yoklama"
       />

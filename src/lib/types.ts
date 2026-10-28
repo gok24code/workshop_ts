@@ -5,9 +5,6 @@ export interface Participant {
   id: string;
   workshopId: string;
   fullName: string;
-  studentNo?: string;
-  email?: string;
-  phone?: string;
   department?: string;
   createdAt: string;
 }

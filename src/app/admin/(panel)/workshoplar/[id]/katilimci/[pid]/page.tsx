@@ -18,9 +18,6 @@ export default async function ParticipantPage({ params }: { params: Promise<{ id
 
   const fields = [
     { name: "fullName", label: "Ad soyad *", value: p.fullName, required: true, max: 100 },
-    { name: "studentNo", label: "Öğrenci no", value: p.studentNo, max: 30 },
-    { name: "email", label: "E-posta", value: p.email, type: "email", max: 120 },
-    { name: "phone", label: "Telefon", value: p.phone, type: "tel", max: 30 },
     { name: "department", label: "Bölüm", value: p.department, max: 100 },
   ];
 
@@ -29,7 +26,7 @@ export default async function ParticipantPage({ params }: { params: Promise<{ id
       <PageHeader
         back={{ href: `/admin/workshoplar/${id}`, label: workshop.title }}
         title={p.fullName}
-        subtitle={[p.studentNo, p.department, p.email, p.phone].filter(Boolean).join(" · ") || "Ek bilgi girilmemiş"}
+        subtitle={p.department || "Bölüm girilmemiş"}
       />
 
       <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -70,7 +67,7 @@ export default async function ParticipantPage({ params }: { params: Promise<{ id
             {fields.map((f) => (
               <div key={f.name}>
                 <label className="label" htmlFor={f.name}>{f.label}</label>
-                <input id={f.name} name={f.name} type={f.type ?? "text"} defaultValue={f.value} required={f.required} maxLength={f.max} className="input" />
+                <input id={f.name} name={f.name} type="text" defaultValue={f.value} required={f.required} maxLength={f.max} className="input" />
               </div>
             ))}
             <div className="sm:col-span-2"><SubmitButton>Kaydet</SubmitButton></div>

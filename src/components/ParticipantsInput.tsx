@@ -5,26 +5,19 @@ import { useEffect, useRef, useState } from "react";
 interface Row {
   key: number;
   fullName: string;
-  studentNo: string;
-  email: string;
-  phone: string;
   department: string;
 }
 
 type Field = Exclude<keyof Row, "key">;
 
-const COLUMNS: { field: Field; label: string; placeholder: string; type?: string; inputMode?: "numeric" | "email" | "tel"; max: number }[] = [
+const COLUMNS: { field: Field; label: string; placeholder: string; max: number }[] = [
   { field: "fullName", label: "Ad Soyad *", placeholder: "Ayşe Yılmaz", max: 100 },
-  { field: "studentNo", label: "Öğrenci No", placeholder: "2101001", inputMode: "numeric", max: 30 },
-  { field: "email", label: "E-posta", placeholder: "ayse@ornek.edu.tr", type: "email", inputMode: "email", max: 120 },
-  { field: "phone", label: "Telefon", placeholder: "0555 111 22 33", type: "tel", inputMode: "tel", max: 30 },
   { field: "department", label: "Bölüm", placeholder: "Bilgisayar Müh.", max: 100 },
 ];
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const HEADER = /^(ad|ad soyad|adı soyadı|isim|name|no|numara|öğrenci no|ogrenci no)$/i;
+const HEADER = /^(ad|ad soyad|adı soyadı|isim|name)$/i;
 
-const emptyRow = (key: number): Row => ({ key, fullName: "", studentNo: "", email: "", phone: "", department: "" });
+const emptyRow = (key: number): Row => ({ key, fullName: "", department: "" });
 const initial = (n: number) => Array.from({ length: n }, (_, i) => emptyRow(i));
 const isEmpty = (r: Row) => COLUMNS.every((c) => !r[c.field].trim());
 
@@ -32,7 +25,6 @@ function rowErrors(r: Row): Partial<Record<Field, string>> {
   if (isEmpty(r)) return {};
   const e: Partial<Record<Field, string>> = {};
   if (!r.fullName.trim()) e.fullName = "Ad soyad gerekli";
-  if (r.email.trim() && !EMAIL.test(r.email.trim())) e.email = "Geçersiz e-posta";
   return e;
 }
 
@@ -84,7 +76,7 @@ export function ParticipantsInput({ required = false, initialRows = 3 }: { requi
   }, [validityMessage]);
 
   const payload = JSON.stringify(
-    filled.map(({ fullName, studentNo, email, phone, department }) => ({ fullName, studentNo, email, phone, department })),
+    filled.map(({ fullName, department }) => ({ fullName, department })),
   );
 
   const update = (key: number, field: Field, value: string) =>
@@ -135,7 +127,7 @@ export function ParticipantsInput({ required = false, initialRows = 3 }: { requi
       {/* readOnly olmamalı: salt okunur alanlar tarayıcı doğrulamasına katılmaz */}
       <input ref={guard} tabIndex={-1} aria-hidden value="" onChange={() => {}} className="pointer-events-none block h-0 w-full border-0 p-0 opacity-0" />
 
-      <div className="mb-2 hidden grid-cols-[1.4fr_1fr_1.3fr_1fr_1fr_36px] gap-2 px-1 md:grid">
+      <div className="mb-2 hidden grid-cols-[1.6fr_1fr_36px] gap-2 px-1 md:grid">
         {COLUMNS.map((c) => (
           <div key={c.field} className="label mb-0">{c.label}</div>
         ))}
@@ -147,20 +139,19 @@ export function ParticipantsInput({ required = false, initialRows = 3 }: { requi
           return (
             <div
               key={r.key}
-              className="grid grid-cols-2 gap-2 rounded-xl border border-navy-100 p-3 md:grid-cols-[1.4fr_1fr_1.3fr_1fr_1fr_36px] md:rounded-none md:border-0 md:p-0"
+              className="grid grid-cols-2 gap-2 rounded-xl border border-navy-100 p-3 md:grid-cols-[1.6fr_1fr_36px] md:rounded-none md:border-0 md:p-0"
             >
               <div className="col-span-2 flex items-center justify-between md:hidden">
                 <span className="text-xs font-semibold text-navy-700/60">{idx + 1}. kişi</span>
               </div>
               {COLUMNS.map((c) => (
-                <div key={c.field} className={c.field === "fullName" || c.field === "email" ? "col-span-2 md:col-span-1" : ""}>
+                <div key={c.field} className="col-span-2 md:col-span-1">
                   <label className="label md:sr-only" htmlFor={`p-${r.key}-${c.field}`}>{c.label}</label>
                   <input
                     id={`p-${r.key}-${c.field}`}
                     data-row={r.key}
                     data-field={c.field}
-                    type={c.type ?? "text"}
-                    inputMode={c.inputMode}
+                    type="text"
                     maxLength={c.max}
                     autoComplete="off"
                     placeholder={idx === 0 ? c.placeholder : ""}

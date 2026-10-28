@@ -24,7 +24,7 @@ export default async function NewWeekPage() {
           initialDate={today()}
           absenceLimit={workshop.absenceLimit}
           allowExcused={false}
-          students={students.map((s) => ({ id: s.id, studentNo: s.studentNo, fullName: s.fullName, absences: participantStats(sessions, s.id).absent }))}
+          students={students.map((s) => ({ id: s.id, fullName: s.fullName, absences: participantStats(sessions, s.id).absent }))}
           save={instructorSaveSession}
           doneHref="/yoklama"
         />

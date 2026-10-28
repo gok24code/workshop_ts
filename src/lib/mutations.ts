@@ -1,9 +1,11 @@
 import "server-only";
 import { randomInt } from "crypto";
 import { newId, now } from "./db";
+import { normalizeName } from "./stats";
 import type { AttendanceStatus, Database, SaveSessionInput } from "./types";
 
 export type { SaveSessionInput };
+export { normalizeName };
 
 export class UserError extends Error {}
 
@@ -58,9 +60,6 @@ export function saveSessionIn(
 
 export interface ParticipantInput {
   fullName: string;
-  studentNo?: string;
-  email?: string;
-  phone?: string;
   department?: string;
 }
 
@@ -70,26 +69,21 @@ const clean = (v: string | undefined, max: number) => (v ?? "").trim().slice(0, 
 export function validateParticipant(input: ParticipantInput): Required<Pick<ParticipantInput, "fullName">> & ParticipantInput {
   const fullName = (input.fullName ?? "").trim().replace(/\s+/g, " ").slice(0, 100);
   if (!fullName) throw new UserError("Ad soyad zorunludur.");
-  const email = clean(input.email, 120);
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new UserError(`Geçersiz e-posta: ${email}`);
   return {
     fullName,
-    studentNo: clean(input.studentNo, 30),
-    email,
-    phone: clean(input.phone, 30),
     department: clean(input.department, 100),
   };
 }
 
 const sameName = (a: string, b: string) => normalizeName(a) === normalizeName(b);
 
-/** Workshop'ta aynı kişi zaten var mı? (öğrenci numarası, numara yoksa ad soyad) */
+/** Workshop'ta aynı kişi zaten var mı? (aynı ad soyad) */
 export function findDuplicate(db: Database, workshopId: string, p: ParticipantInput, exceptId?: string) {
   return db.participants.find(
     (x) =>
       x.workshopId === workshopId &&
       x.id !== exceptId &&
-      (p.studentNo && x.studentNo ? x.studentNo === p.studentNo : sameName(x.fullName, p.fullName)),
+      sameName(x.fullName, p.fullName),
   );
 }
 
@@ -143,7 +137,7 @@ export function parseParticipantsJson(json: string): { rows: ParticipantInput[];
   data.slice(0, 2000).forEach((item, i) => {
     const r = (item && typeof item === "object" ? item : {}) as Record<string, unknown>;
     const val = (k: string) => (typeof r[k] === "string" ? (r[k] as string) : "");
-    const input = { fullName: val("fullName"), studentNo: val("studentNo"), email: val("email"), phone: val("phone"), department: val("department") };
+    const input = { fullName: val("fullName"), department: val("department") };
     if (Object.values(input).every((v) => !v.trim())) return;
     try {
       rows.push(validateParticipant(input));
@@ -154,16 +148,6 @@ export function parseParticipantsJson(json: string): { rows: ParticipantInput[];
   return { rows, errors };
 }
 
-/** Giriş için workshop adını karşılaştırılabilir hale getirir (büyük/küçük harf, Türkçe karakter, boşluk). */
-export function normalizeName(name: string): string {
-  return name
-    .toLocaleLowerCase("tr")
-    .replace(/ı/g, "i")
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-}
 
 /** Karıştırılması kolay karakterler (0/O, 1/l/I) olmadan rastgele şifre üretir. */
 export function generatePassword(length = 10): string {

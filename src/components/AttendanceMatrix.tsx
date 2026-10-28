@@ -64,7 +64,7 @@ export function AttendanceMatrix({
                     person.fullName
                   )}
                 </div>
-                <div className="text-xs text-navy-700/60">{person.studentNo ?? person.email ?? ""}</div>
+                {person.department && <div className="text-xs text-navy-700/60">{person.department}</div>}
               </td>
               <td className="text-center">
                 <AbsenceBadge count={stats.absent} limit={workshop.absenceLimit} />

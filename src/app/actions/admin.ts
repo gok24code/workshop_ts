@@ -150,16 +150,13 @@ export async function updateParticipant(_: FormState, fd: FormData): Promise<For
     const id = str(fd, "id");
     const data = validateParticipant({
       fullName: str(fd, "fullName", 100),
-      studentNo: str(fd, "studentNo", 30),
-      email: str(fd, "email", 120),
-      phone: str(fd, "phone", 30),
       department: str(fd, "department", 100),
     });
     await mutateDb((db) => {
       const p = db.participants.find((x) => x.id === id);
       if (!p) throw new UserError("Katılımcı bulunamadı.");
       if (findDuplicate(db, p.workshopId, data, id)) throw new UserError("Bu workshop'ta aynı kişi zaten kayıtlı.");
-      Object.assign(p, { studentNo: undefined, email: undefined, phone: undefined, department: undefined }, data);
+      Object.assign(p, { department: undefined }, data);
     });
   });
 }
