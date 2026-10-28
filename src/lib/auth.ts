@@ -136,7 +136,7 @@ export async function destroyAdminSession(): Promise<void> {
 }
 
 /* ------------------------------------------------------------------ */
-/* Eğitmen: workshop'a bağlı, süresiz; şifre değişince geçersiz olur     */
+/* Sorumlu: workshop'a bağlı, süresiz; şifre değişince geçersiz olur     */
 /* ------------------------------------------------------------------ */
 
 export async function createInstructorSession(workshop: Workshop): Promise<void> {
@@ -156,7 +156,7 @@ export async function createInstructorSession(workshop: Workshop): Promise<void>
   });
 }
 
-/** Eğitmen oturumunun bağlı olduğu workshop'u döner; geçersizse `null`. */
+/** Sorumlu oturumunun bağlı olduğu workshop'u döner; geçersizse `null`. */
 export async function getInstructorWorkshop() {
   const payload = await verify((await cookies()).get(INSTRUCTOR_COOKIE)?.value, INSTRUCTOR_AUD);
   if (!payload || typeof payload.wid !== "string" || typeof payload.v !== "number") return null;

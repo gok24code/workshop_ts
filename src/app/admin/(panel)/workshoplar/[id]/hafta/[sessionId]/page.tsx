@@ -23,7 +23,7 @@ export default async function AdminEditWeekPage({ params }: { params: Promise<{ 
       <PageHeader
         back={{ href: `/admin/workshoplar/${id}`, label: workshop.title }}
         title={`${session.week}. hafta yoklaması`}
-        subtitle={`${formatDate(session.date)}${session.topic ? ` · ${session.topic}` : ""} · Son düzenleyen: ${session.takenBy === "admin" ? "Yönetim" : "Eğitmen"}`}
+        subtitle={`${formatDate(session.date)}${session.topic ? ` · ${session.topic}` : ""} · Son düzenleyen: ${session.takenBy === "admin" ? "Yönetim" : "Sorumlu"}`}
         actions={
           <ConfirmForm action={adminDeleteSession} hidden={{ id: session.id, workshopId: id }} message="Bu haftanın yoklaması silinsin mi?">
             Yoklamayı sil

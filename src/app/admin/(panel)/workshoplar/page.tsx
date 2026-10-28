@@ -15,7 +15,7 @@ export default async function WorkshopsPage() {
     <>
       <PageHeader
         title="Workshoplar"
-        subtitle="Her workshop'un kendi katılımcı listesi ve eğitmen şifresi vardır."
+        subtitle="Her workshop'un kendi katılımcı listesi ve sorumlu şifresi vardır."
         actions={<Link href="/admin/workshoplar/yeni" className="btn-gold">+ Yeni workshop</Link>}
       />
       {workshops.length === 0 ? (
@@ -42,7 +42,7 @@ export default async function WorkshopsPage() {
                     <td>
                       <Link href={`/admin/workshoplar/${w.id}`} className="font-semibold hover:text-gold-600">{w.title}</Link>
                       {w.archived && <span className="ml-2 rounded bg-navy-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase">Arşiv</span>}
-                      <div className="text-xs text-navy-700/60">{w.instructorName || "Eğitmen adı girilmedi"}</div>
+                      <div className="text-xs text-navy-700/60">{w.instructorName || "Sorumlu adı girilmedi"}</div>
                     </td>
                     <td className="text-center tabular-nums">{s.participantCount}</td>
                     <td className="text-center tabular-nums">{s.sessionCount}</td>

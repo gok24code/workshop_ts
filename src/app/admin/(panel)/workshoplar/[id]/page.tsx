@@ -7,7 +7,7 @@ import { ParticipantsInput } from "@/components/ParticipantsInput";
 import { PageHeader, StatCard } from "@/components/ui";
 import { requireAdmin } from "@/lib/auth";
 import { readDb } from "@/lib/db";
-import { nextWeek, participantsOf, pct, sessionsOf, workshopStats } from "@/lib/stats";
+import { formatDate, nextWeek, participantsOf, pct, sessionsOf, workshopStats } from "@/lib/stats";
 
 export default async function AdminWorkshopPage({ params }: { params: Promise<{ id: string }> }) {
   await requireAdmin();
@@ -25,7 +25,7 @@ export default async function AdminWorkshopPage({ params }: { params: Promise<{ 
       <PageHeader
         back={{ href: "/admin/workshoplar", label: "Workshoplar" }}
         title={workshop.title}
-        subtitle={`${workshop.instructorName || "Eğitmen adı girilmedi"} · Devamsızlık sınırı: ${workshop.absenceLimit} hafta${workshop.archived ? " · Arşivlenmiş" : ""}`}
+        subtitle={`${workshop.instructorName || "Sorumlu adı girilmedi"} · Devamsızlık sınırı: ${workshop.absenceLimit} hafta${workshop.archived ? " · Arşivlenmiş" : ""}`}
         actions={
           <>
             <a href={`/admin/csv/${workshop.id}`} className="btn-ghost">CSV indir</a>
@@ -61,6 +61,35 @@ export default async function AdminWorkshopPage({ params }: { params: Promise<{ 
         )}
       />
 
+      {sessions.length > 0 && (
+        <section className="mt-8">
+          <h2 className="mb-3 text-lg font-bold">Alınan yoklamalar</h2>
+          <div className="card divide-y divide-navy-100">
+            {sessions.map((s) => {
+              const vals = Object.values(s.attendance);
+              return (
+                <Link key={s.id} href={`/admin/workshoplar/${workshop.id}/hafta/${s.id}`} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-navy-50">
+                  <div className="min-w-0">
+                    <div className="font-semibold">{s.week}. hafta</div>
+                    <div className="truncate text-xs text-navy-700/60">
+                      {formatDate(s.date)} · {s.takenBy === "admin" ? "Yönetim" : "Sorumlu"}{s.topic ? ` · ${s.topic}` : ""}
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-4 text-xs font-semibold">
+                    <span>
+                      <span className="text-emerald-700">{vals.filter((v) => v === "present").length} geldi</span>
+                      <span className="mx-1 text-navy-700/30">·</span>
+                      <span className="text-red-700">{vals.filter((v) => v === "absent").length} gelmedi</span>
+                    </span>
+                    <span className="text-gold-700">Düzenle →</span>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       <div className="card mt-8 p-5">
         <h2 className="mb-1 text-lg font-bold">Katılımcı ekle</h2>
         <p className="mb-4 text-sm text-navy-700/60">
@@ -75,9 +104,9 @@ export default async function AdminWorkshopPage({ params }: { params: Promise<{ 
 
       <div className="mt-8 grid gap-8 items-start lg:grid-cols-2">
         <div className="card p-5">
-          <h2 className="mb-1 text-lg font-bold">Eğitmen şifresi</h2>
+          <h2 className="mb-1 text-lg font-bold">Sorumlu şifresi</h2>
           <p className="mb-4 text-sm text-navy-700/60">
-            Şifreler geri okunamayacak şekilde saklanır. Yeni şifre belirlendiğinde eğitmenin açık oturumları kapanır.
+            Şifreler geri okunamayacak şekilde saklanır. Yeni şifre belirlendiğinde sorumlunun açık oturumları kapanır.
           </p>
           <ActionForm action={resetWorkshopPassword} resetOnSuccess className="flex flex-wrap gap-2">
             <input type="hidden" name="id" value={workshop.id} />
@@ -91,11 +120,11 @@ export default async function AdminWorkshopPage({ params }: { params: Promise<{ 
           <ActionForm action={updateWorkshop} className="space-y-4">
             <input type="hidden" name="id" value={workshop.id} />
             <div>
-              <label className="label" htmlFor="title">Workshop adı (eğitmen girişinde kullanılır)</label>
+              <label className="label" htmlFor="title">Workshop adı (sorumlu girişinde kullanılır)</label>
               <input id="title" name="title" defaultValue={workshop.title} className="input" required maxLength={120} />
             </div>
             <div>
-              <label className="label" htmlFor="instructorName">Eğitmen adı</label>
+              <label className="label" htmlFor="instructorName">Sorumlu adı</label>
               <input id="instructorName" name="instructorName" defaultValue={workshop.instructorName} className="input" maxLength={100} />
             </div>
             <div>
@@ -108,7 +137,7 @@ export default async function AdminWorkshopPage({ params }: { params: Promise<{ 
             </div>
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" name="archived" defaultChecked={workshop.archived} className="accent-gold-600" />
-              Arşivle (eğitmen giriş yapamaz)
+              Arşivle (sorumlu giriş yapamaz)
             </label>
             <SubmitButton>Kaydet</SubmitButton>
           </ActionForm>

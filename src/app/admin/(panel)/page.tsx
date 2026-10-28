@@ -51,7 +51,7 @@ export default async function AdminHome() {
               <thead>
                 <tr>
                   <th>Workshop</th>
-                  <th>Eğitmen</th>
+                  <th>Sorumlu</th>
                   <th className="text-center">Katılımcı</th>
                   <th className="text-center">Hafta</th>
                   <th className="text-center">Devamsızlık</th>
@@ -113,7 +113,7 @@ export default async function AdminHome() {
                     <div className="min-w-0">
                       <div className="truncate font-semibold">{w?.title} · {s.week}. hafta</div>
                       <div className="truncate text-xs text-navy-700/60">
-                        {formatDate(s.date)} · {s.takenBy === "admin" ? "Yönetim" : "Eğitmen"}{s.topic ? ` · ${s.topic}` : ""}
+                        {formatDate(s.date)} · {s.takenBy === "admin" ? "Yönetim" : "Sorumlu"}{s.topic ? ` · ${s.topic}` : ""}
                       </div>
                     </div>
                     <div className="shrink-0 text-xs font-semibold">

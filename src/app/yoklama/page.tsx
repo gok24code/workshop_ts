@@ -47,9 +47,12 @@ export default async function InstructorHome() {
       </section>
 
       <section>
-        <h2 className="mb-3 text-base font-bold text-navy-900">Katılımcılar ve devamsızlık</h2>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-base font-bold text-navy-900">Katılımcılar ve devamsızlık</h2>
+          <Link href="/yoklama/uyeler" className="btn-ghost shrink-0">Üye bilgisi düzenle</Link>
+        </div>
         {students.length === 0 ? (
-          <Empty>Bu workshop&apos;a henüz katılımcı tanımlanmadı. Yönetimle iletişime geçin.</Empty>
+          <Empty>Bu workshop&apos;a henüz katılımcı tanımlanmadı. “Üye bilgisi düzenle”den ekleyebilirsiniz.</Empty>
         ) : (
           <div className="card divide-y divide-navy-100">
             {students.map((s) => {

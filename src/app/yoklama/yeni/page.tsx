@@ -16,7 +16,7 @@ export default async function NewWeekPage() {
       <h1 className="mb-1 text-2xl font-bold">Yoklama al</h1>
       <p className="mb-5 text-sm text-navy-700/70">Her katılımcı için “Geldi” veya “Gelmedi” seçin.</p>
       {students.length === 0 ? (
-        <Empty>Bu workshop&apos;a henüz katılımcı tanımlanmadı. Yönetimle iletişime geçin.</Empty>
+        <Empty>Bu workshop&apos;a henüz katılımcı tanımlanmadı. Panelde “Üye bilgisi düzenle”den ekleyebilirsiniz.</Empty>
       ) : (
         <AttendanceTaker
           workshopId={workshop.id}

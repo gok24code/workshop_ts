@@ -5,7 +5,7 @@ import { LogoMark, OrgFooter } from "@/components/Logo";
 import { getInstructorWorkshop } from "@/lib/auth";
 import { readDb } from "@/lib/db";
 
-export const metadata = { title: "Eğitmen Girişi" };
+export const metadata = { title: "Sorumlu Girişi" };
 
 export default async function InstructorLoginPage() {
   if (await getInstructorWorkshop()) redirect("/yoklama");
@@ -25,7 +25,7 @@ export default async function InstructorLoginPage() {
         <div className="overflow-hidden rounded-2xl bg-white text-navy-900 shadow-2xl">
           <div className="bg-gold-gradient h-1" />
           <div className="p-6">
-            <h2 className="text-lg font-bold">Eğitmen Girişi</h2>
+            <h2 className="text-lg font-bold">Sorumlu Girişi</h2>
             <p className="mt-1 mb-5 text-sm text-navy-700/70">Workshop&apos;unuzu seçin ve size verilen şifreyi girin.</p>
             <ActionForm action={instructorLogin} className="space-y-4">
               <div>

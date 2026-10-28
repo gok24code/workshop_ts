@@ -52,7 +52,7 @@ function assertUniqueTitle(db: Database, title: string, exceptId?: string) {
   const n = normalizeName(title);
   if (!n) throw new UserError("Workshop adı harf veya rakam içermeli.");
   if (db.workshops.some((w) => w.id !== exceptId && normalizeName(w.title) === n)) {
-    throw new UserError("Bu ada çok benzeyen bir workshop zaten var. Eğitmen girişi ada göre yapıldığından farklı bir ad seçin.");
+    throw new UserError("Bu ada çok benzeyen bir workshop zaten var. Sorumlu girişi ada göre yapıldığından farklı bir ad seçin.");
   }
 }
 
@@ -85,7 +85,7 @@ export async function createWorkshop(_: FormState, fd: FormData): Promise<FormSt
     });
     const dup = skipped.length ? ` (${skipped.length} tekrar eden satır atlandı)` : "";
     return {
-      ok: `“${title}” ${added} katılımcıyla oluşturuldu${dup}. Eğitmen girişi için şifre aşağıda; bu şifre bir daha gösterilmeyecek.`,
+      ok: `“${title}” ${added} katılımcıyla oluşturuldu${dup}. Sorumlu girişi için şifre aşağıda; bu şifre bir daha gösterilmeyecek.`,
       secret: password,
     };
   });
@@ -109,7 +109,7 @@ export async function updateWorkshop(_: FormState, fd: FormData): Promise<FormSt
   });
 }
 
-/** Yeni şifre belirler ve o workshop'taki tüm açık eğitmen oturumlarını kapatır. */
+/** Yeni şifre belirler ve o workshop'taki tüm açık sorumlu oturumlarını kapatır. */
 export async function resetWorkshopPassword(_: FormState, fd: FormData): Promise<FormState> {
   return run(async () => {
     const id = str(fd, "id");
@@ -121,7 +121,7 @@ export async function resetWorkshopPassword(_: FormState, fd: FormData): Promise
       w.passwordHash = passwordHash;
       w.passwordVersion++;
     });
-    return { ok: "Yeni şifre belirlendi, eğitmenin açık oturumları kapatıldı. Şifre bir daha gösterilmeyecek.", secret: password };
+    return { ok: "Yeni şifre belirlendi, sorumlunun açık oturumları kapatıldı. Şifre bir daha gösterilmeyecek.", secret: password };
   });
 }
 

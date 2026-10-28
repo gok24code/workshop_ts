@@ -11,7 +11,7 @@ export default async function NewWorkshopPage() {
       <PageHeader
         back={{ href: "/admin/workshoplar", label: "Workshoplar" }}
         title="Yeni workshop"
-        subtitle="Workshop bilgilerini ve katılımcıları girin. Eğitmen, workshop adı ve oluşturulan şifreyle giriş yapacak."
+        subtitle="Workshop bilgilerini ve katılımcıları girin. Sorumlu, workshop adı ve oluşturulan şifreyle giriş yapacak."
       />
       <ActionForm action={createWorkshop} resetOnSuccess className="space-y-6">
         <div className="card p-5">
@@ -20,10 +20,10 @@ export default async function NewWorkshopPage() {
             <div>
               <label className="label" htmlFor="title">Workshop adı *</label>
               <input id="title" name="title" className="input" placeholder="ör. Web Güvenliği" required maxLength={120} />
-              <p className="mt-1 text-xs text-navy-700/60">Eğitmen bu adla giriş yapacak; kısa ve net tutun.</p>
+              <p className="mt-1 text-xs text-navy-700/60">Sorumlu bu adla giriş yapacak; kısa ve net tutun.</p>
             </div>
             <div>
-              <label className="label" htmlFor="instructorName">Eğitmen adı</label>
+              <label className="label" htmlFor="instructorName">Sorumlu adı</label>
               <input id="instructorName" name="instructorName" className="input" maxLength={100} />
             </div>
             <div>
@@ -35,7 +35,7 @@ export default async function NewWorkshopPage() {
               <input id="description" name="description" className="input" maxLength={500} />
             </div>
             <div>
-              <label className="label" htmlFor="password">Eğitmen şifresi</label>
+              <label className="label" htmlFor="password">Sorumlu şifresi</label>
               <input id="password" name="password" type="text" className="input" placeholder="Boş bırakın → güçlü şifre üretilir" autoComplete="off" maxLength={200} />
             </div>
           </div>

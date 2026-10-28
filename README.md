@@ -4,18 +4,18 @@ ISUBÜ Siber Güvenlik ve Yapay Zeka Topluluğu workshopları için haftalık yo
 
 | Adres | Kim kullanır | Ne yapar |
 | --- | --- | --- |
-| `/` | Eğitmen (telefondan) | **Workshop adı + workshop'a özel şifre** ile giriş. Hafta hafta yalnızca *Geldi / Gelmedi* işaretler. |
-| `/admin` | Topluluk başkanları, danışman hocalar | Workshop ve öğrenci tanımlar, eğitmen şifrelerini yönetir, her öğrencinin her workshop'taki haftalık yoklamasını ve devamsızlığını görür, CSV indirir. |
+| `/` | Sorumlu (telefondan) | **Workshop adı + workshop'a özel şifre** ile giriş. Hafta hafta yalnızca *Geldi / Gelmedi* işaretler. |
+| `/admin` | Topluluk başkanları, danışman hocalar | Workshop ve öğrenci tanımlar, sorumlu şifrelerini yönetir, her öğrencinin her workshop'taki haftalık yoklamasını ve devamsızlığını görür, CSV indirir. |
 
 Teknoloji: Next.js (App Router, Server Actions) · Tailwind CSS · Cloudflare R2 (private bucket) · Vercel.
 
 ## Güvenlik
 
 - **Admin oturumu:** `.env` içindeki `ADMIN_PASSWORD` ile açılır. Oturum sunucuda kayıtlıdır, açıldığı tarayıcıya bağlıdır (çerez başka tarayıcıya taşınırsa geçersiz olur) ve `ADMIN_SESSION_MINUTES` (varsayılan 120 dk) sonunda biter. *Oturumlar* sayfasından tek tek veya topluca kapatılabilir. Çerez `httpOnly`, `Secure`, `SameSite=Strict`, yalnızca `/admin` yoluna gönderilir.
-- **Eğitmen oturumu:** Süresizdir (eğitmen her hafta yeniden giriş yapmaz). Admin o workshop'un şifresini değiştirdiği anda tüm açık eğitmen oturumları geçersiz olur. Workshop arşivlenir veya silinirse de oturum düşer.
-- **Eğitmen yetkisi:** Yalnızca kendi workshop'unda haftalık *Geldi/Gelmedi* kaydı. Öğrenci ekleyemez, yoklama silemez, *İzinli* giremez; workshop kimliği istemciden değil imzalı oturumdan alınır.
+- **Sorumlu oturumu:** Süresizdir (sorumlu her hafta yeniden giriş yapmaz). Admin o workshop'un şifresini değiştirdiği anda tüm açık sorumlu oturumları geçersiz olur. Workshop arşivlenir veya silinirse de oturum düşer.
+- **Sorumlu yetkisi:** Yalnızca kendi workshop'unda haftalık *Geldi/Gelmedi* kaydı ve “Üye bilgisi düzenle” sayfasından katılımcı ekleme/çıkarma. Yoklama silemez, *İzinli* giremez; workshop kimliği istemciden değil imzalı oturumdan alınır.
 - **Şifreler:** Workshop şifreleri bcrypt ile saklanır, geri okunamaz; oluşturulurken bir kez gösterilir.
-- **Kaba kuvvet koruması:** Aynı IP'den 15 dk içinde 5 hatalı giriş → 15 dk kilit (admin ve eğitmen girişi ayrı ayrı).
+- **Kaba kuvvet koruması:** Aynı IP'den 15 dk içinde 5 hatalı giriş → 15 dk kilit (admin ve sorumlu girişi ayrı ayrı).
 - **Diğer:** HSTS, clickjacking koruması (`frame-ancestors 'none'`), `nosniff`, arama motorlarına kapalı (`noindex`), kişisel veri içeren sayfalarda `no-store`, CSV'de Excel formül enjeksiyonu koruması.
 
 ## Kurulum
@@ -59,7 +59,7 @@ npm run dev
 
 ## Kullanım
 
-1. `/admin` → **Workshoplar**: workshop oluşturun. Şifre alanını boş bırakırsanız güçlü bir şifre üretilir; workshop adı ve şifreyi eğitmene iletin.
+1. `/admin` → **Workshoplar**: workshop oluşturun. Şifre alanını boş bırakırsanız güçlü bir şifre üretilir; workshop adı ve şifreyi sorumluya iletin.
 2. Workshop sayfasında öğrencileri tanımlayın (Excel'den `numara, ad soyad, e-posta, bölüm` satırlarını yapıştırabilirsiniz).
-3. Eğitmen telefondan ana sayfaya girer, workshop adı ve şifreyle giriş yapar, her hafta **“N. hafta yoklamasını al”** ile yoklama kaydeder. Workshop adında büyük/küçük harf ve Türkçe karakter farkı önemli değildir.
+3. Sorumlu telefondan ana sayfaya girer, workshop adı ve şifreyle giriş yapar, her hafta **“N. hafta yoklamasını al”** ile yoklama kaydeder. Workshop adında büyük/küçük harf ve Türkçe karakter farkı önemli değildir.
 4. Admin panelinde workshop tablosunda hafta hafta yoklamayı, öğrenci sayfasında her öğrencinin tüm workshoplardaki haftalarını ve devamsızlık sayısını görürsünüz. Sınırı aşanlar kırmızı vurgulanır.

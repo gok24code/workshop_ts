@@ -10,8 +10,8 @@ export class UserError extends Error {}
 
 /**
  * Bir haftanın yoklamasını oluşturur veya günceller.
- * `allowed` dışındaki durumlar yok sayılır; eğitmen yalnızca Var/Yok girebilir,
- * yönetimin girdiği "İzinli" kayıtları eğitmen düzenlemesinde korunur.
+ * `allowed` dışındaki durumlar yok sayılır; sorumlu yalnızca Var/Yok girebilir,
+ * yönetimin girdiği "İzinli" kayıtları sorumlu düzenlemesinde korunur.
  */
 export function saveSessionIn(
   db: Database,

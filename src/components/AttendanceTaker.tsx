@@ -59,7 +59,7 @@ export function AttendanceTaker({
   const [pending, startTransition] = useTransition();
 
   const options: AttendanceStatus[] = allowExcused ? ["present", "absent", "excused"] : ["present", "absent"];
-  /** Eğitmen, yönetimin girdiği "İzinli" kaydını değiştiremez. */
+  /** Sorumlu, yönetimin girdiği "İzinli" kaydını değiştiremez. */
   const isLocked = (id: string) => !allowExcused && initialAttendance?.[id] === "excused";
 
   const filtered = useMemo(() => {

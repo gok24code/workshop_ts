@@ -18,9 +18,9 @@ export interface Workshop {
   description?: string;
   /** Yalnızca gösterim amaçlı (ör. "Ahmet Yılmaz"). */
   instructorName?: string;
-  /** Eğitmen girişi için workshop'a özel şifrenin bcrypt hash'i. */
+  /** Sorumlu girişi için workshop'a özel şifrenin bcrypt hash'i. */
   passwordHash: string;
-  /** Şifre her değiştiğinde artar; eski eğitmen oturumları geçersiz olur. */
+  /** Şifre her değiştiğinde artar; eski sorumlu oturumları geçersiz olur. */
   passwordVersion: number;
   /** Bu sayıdan fazla devamsızlık yapan katılımcı uyarı alır. */
   absenceLimit: number;
