@@ -1,0 +1,4 @@
+[build.environment]
+  # Turbopack'in kalıcı build cache'i, invalidation için env değerlerini kaydeder.
+  # Bu dosyalar deploy edilmez/sunulmaz; secret taramasından hariç tutuyoruz.
+  SECRETS_SCAN_OMIT_PATHS = ".netlify/.next/cache/**,.next/cache/**"
